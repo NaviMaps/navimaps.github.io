@@ -43,6 +43,10 @@ input{flex:1;min-width:0;min-height:46px;padding:0 12px;border-radius:12px;borde
 .item span{flex:1;padding:10px 0}.item small{color:var(--muted)}
 .item button{width:44px;height:44px;border:none;background:none;color:var(--danger);font-size:18px}
 .empty{color:var(--muted);font-size:14px;padding:6px 0}
+.route{background:var(--bg);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;font-size:15px}
+.route small{color:var(--muted);font-size:12px}
+.rr{display:flex;align-items:center;gap:10px}.rr span{min-width:48px;text-align:center;font-variant-numeric:tabular-nums}
+.mini{min-height:40px;padding:0 14px;border:1px solid var(--grid);background:var(--panel);color:var(--fg);border-radius:10px;font-size:15px}
 #toast{position:absolute;left:50%;top:70px;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:8px 14px;border-radius:20px;font-size:14px;opacity:0;transition:opacity .25s;pointer-events:none}
 #toast.on{opacity:.95}
 </style>
@@ -58,6 +62,8 @@ var useState=React.useState,useEffect=React.useEffect,useRef=React.useRef;
 var html=htm.bind(React.createElement);
 var dpr=Math.min(window.devicePixelRatio||1,3);
 var DIRS=['N','NE','E','SE','S','SO','O','NO'];
+function bearing(a,b){var t=Math.PI/180,y=Math.sin((b.lng-a.lng)*t)*Math.cos(b.lat*t),x=Math.cos(a.lat*t)*Math.sin(b.lat*t)-Math.sin(a.lat*t)*Math.cos(b.lat*t)*Math.cos((b.lng-a.lng)*t);return (Math.atan2(y,x)/t+360)%360}
+function fmtT(h){var m=Math.round(h*60);return m>=60?Math.floor(m/60)+' h '+(m%60)+' min':m+' min'}
 var NICE=[1,2,5,10,20,50,100,200,500,1000,2000,5000,10000,20000,50000,100000];
 
 function W(z){return 256*Math.pow(2,z)}
@@ -82,10 +88,12 @@ function App(){
   var _sa=useState(false),sat=_sa[0],setSat=_sa[1];
   var _w=useState(null),wx=_w[0],setWx=_w[1];
   var satR=useRef(false);
+  var _d=useState(null),dest=_d[0],setDest=_d[1];
+  var _sp=useState(8),cruise=_sp[0],setCruise=_sp[1];
 
   var cv=useRef(null),sc=useRef(null),scl=useRef(null),raf=useRef(0),tiles=useRef({}),drawRef=useRef(null);
   var D=useRef({}),wid=useRef(null),first=useRef(true),lock=useRef(null),trk=useRef(track),kmR=useRef(0),recR=useRef(false),tt=useRef(0);
-  D.current={marks:marks,track:track,me:me};
+  D.current={marks:marks,track:track,me:me,dest:dest};
 
   function save(){try{localStorage.setItem('delta',JSON.stringify({marks:D.current.marks,track:D.current.track,lat:V.current.lat,lng:V.current.lng,z:V.current.z}))}catch(e){}}
   function req(){if(!raf.current)raf.current=requestAnimationFrame(function(){raf.current=0;if(drawRef.current)drawRef.current()})}
@@ -109,6 +117,8 @@ function App(){
     if(d.track.length>1){ctx.strokeStyle=css('--accent');ctx.lineWidth=4;ctx.lineJoin='round';ctx.beginPath();d.track.forEach(function(p,i){var q=P(p);i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y)});ctx.stroke()}
     d.marks.forEach(function(m){var q=P(m);ctx.fillStyle=css('--danger');ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.beginPath();ctx.arc(q.x,q.y,8,0,7);ctx.fill();ctx.stroke();
       ctx.font='600 13px system-ui';ctx.lineWidth=3;ctx.strokeStyle=css('--bg');ctx.strokeText(m.name,q.x+12,q.y+5);ctx.fillStyle=css('--fg');ctx.fillText(m.name,q.x+12,q.y+5)});
+    if(d.dest){var dq=P(d.dest);if(d.me){var mq=P(d.me);ctx.setLineDash([10,8]);ctx.strokeStyle=css('--accent');ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(mq.x,mq.y);ctx.lineTo(dq.x,dq.y);ctx.stroke();ctx.setLineDash([])}
+      ctx.fillStyle='#e8a317';ctx.strokeStyle='#fff';ctx.lineWidth=3;ctx.beginPath();ctx.arc(dq.x,dq.y,10,0,7);ctx.fill();ctx.stroke()}
     if(d.me){var q=P(d.me);ctx.fillStyle='rgba(10,124,140,.25)';ctx.beginPath();ctx.arc(q.x,q.y,18,0,7);ctx.fill();
       ctx.fillStyle='#0a7c8c';ctx.strokeStyle='#fff';ctx.lineWidth=3;ctx.beginPath();ctx.arc(q.x,q.y,8,0,7);ctx.fill();ctx.stroke()}
     var mpp=156543.03*Math.cos(v.lat*Math.PI/180)/Math.pow(2,v.z),m100=100*mpp,nv=NICE[0];
@@ -143,7 +153,7 @@ function App(){
       c.removeEventListener('wheel',wheel);window.removeEventListener('resize',size);document.removeEventListener('visibilitychange',vis)}
   },[]);
 
-  useEffect(function(){req();save()},[marks,track,me]);
+  useEffect(function(){req();save()},[marks,track,me,dest]);
 
   function wake(){try{if(navigator.wakeLock)navigator.wakeLock.request('screen').then(function(l){lock.current=l}).catch(function(){})}catch(e){}}
   function startGPS(){
@@ -165,6 +175,7 @@ function App(){
   function addMark(){var nm=name.trim()||('Punto '+(marks.length+1));
     setMarks(marks.concat([{name:nm,lat:V.current.lat,lng:V.current.lng}]));setName('');
     if(document.activeElement)document.activeElement.blur();say('Guardado: '+nm)}
+  function setDestHere(){setDest({lat:V.current.lat,lng:V.current.lng});say('Destino marcado')}
   function goTo(m){V.current.lat=m.lat;V.current.lng=m.lng;V.current.z=Math.max(V.current.z,14);req();save()}
   function del(i){setMarks(marks.filter(function(_,j){return j!==i}))}
   function step(d){zoomAt(cv.current.clientWidth/2,cv.current.clientHeight/2,Math.round(V.current.z)+d);save()}
@@ -197,8 +208,21 @@ function App(){
         ${rec
           ?html`<button className="btn rec" onClick=${function(){recOn(false)}}>Detener recorrido</button>`
           :html`<button className="btn" onClick=${function(){recOn(true)}}>Grabar</button>`}
-        <button className="btn p" onClick=${addMark}>Marcar centro</button>
+        <button className="btn p" onClick=${addMark}>Marcar</button>
+        <button className="btn" onClick=${setDestHere}>Ir ahí</button>
       </div>
+      ${dest?html`<div className="route">
+        ${me?html`<div><b>${(dist(me,dest)/1.852).toFixed(1)} mn</b> · ${dist(me,dest).toFixed(1)} km · rumbo ${Math.round(bearing(me,dest))}°</div>
+          <div>Llegada en <b>${fmtT(dist(me,dest)/1.852/cruise)}</b> a ${cruise} nd</div>`
+          :html`<div>Activá ◎ para calcular desde tu posición</div>`}
+        <div className="rr">
+          <button className="mini" onClick=${function(){setCruise(Math.max(1,cruise-1))}}>−</button>
+          <span>${cruise} nd</span>
+          <button className="mini" onClick=${function(){setCruise(Math.min(40,cruise+1))}}>+</button>
+          <button className="mini" onClick=${function(){setDest(null)}}>Quitar destino</button>
+        </div>
+        <small>Línea recta: todavía no sigue canales ni evita bajíos.</small>
+      </div>`:null}
       <div id="more">
         <div className="row"><input value=${name} placeholder="Nombre del punto (muelle, arroyo…)" enterKeyHint="done"
           onInput=${function(e){setName(e.target.value)}} onKeyDown=${function(e){if(e.key==='Enter')addMark()}} /></div>
@@ -206,6 +230,7 @@ function App(){
           ${marks.length
             ?marks.map(function(m,i){return html`<div className="item" key=${i}>
                 <span onClick=${function(){goTo(m)}}>${m.name}${me?html`<small> · ${dist(me,m).toFixed(1)} km</small>`:null}</span>
+                <button aria-label="Ir" style=${{color:'var(--accent)'}} onClick=${function(){setDest(m);say('Destino: '+m.name)}}>➤</button>
                 <button aria-label="Borrar" onClick=${function(){del(i)}}>✕</button>
               </div>`})
             :html`<div className="empty">Todavía no marcaste ningún punto.</div>`}
