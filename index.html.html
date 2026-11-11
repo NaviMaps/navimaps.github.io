@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mapa del Delta</title>
+<style>
+:root{--bg:#eef3f4;--grid:#cfdcde;--fg:#13262b;--panel:#ffffff;--accent:#0a7c8c;--muted:#5d7479;--danger:#c0392b;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1a1d;--grid:#1d2f34;--fg:#e4eff1;--panel:#18272b;--accent:#35b6c7;--muted:#8ea8ad;--danger:#ef7a6c;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1a1d;--grid:#1d2f34;--fg:#e4eff1;--panel:#18272b;--accent:#35b6c7;--muted:#8ea8ad;--danger:#ef7a6c;color-scheme:dark}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+#app{display:flex;flex-direction:column;height:100%}
+#mapwrap{position:relative;flex:1;min-height:0}
+canvas{width:100%;height:100%;display:block;touch-action:none}
+.cross{position:absolute;left:50%;top:50%;width:22px;height:22px;margin:-11px 0 0 -11px;pointer-events:none}
+.cross:before,.cross:after{content:"";position:absolute;background:var(--accent)}
+.cross:before{left:10px;top:0;width:2px;height:22px}.cross:after{top:10px;left:0;height:2px;width:22px}
+.zoom{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:6px}
+.zoom button{width:40px;height:40px;font-size:20px}
+.info{position:absolute;left:10px;top:10px;background:var(--panel);padding:6px 10px;border-radius:8px;font-size:12px;color:var(--muted);max-width:60%}
+#panel{background:var(--panel);padding:10px;display:flex;flex-direction:column;gap:8px;max-height:42%;overflow:auto}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+button{border:1px solid var(--grid);background:var(--panel);color:var(--fg);border-radius:10px;padding:9px 12px;font-size:14px}
+button.p{background:var(--accent);border-color:var(--accent);color:#fff}
+button.rec{background:var(--danger);border-color:var(--danger);color:#fff}
+input{flex:1;min-width:120px;padding:9px;border-radius:10px;border:1px solid var(--grid);background:var(--bg);color:var(--fg);font-size:16px}
+.item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-top:1px solid var(--grid);font-size:14px}
+.item span{flex:1;cursor:pointer}.item small{color:var(--muted)}
+.note{font-size:12px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="mapwrap">
+    <canvas id="c"></canvas><div class="cross"></div>
+    <div class="info" id="info">Mové el mapa y marcá el centro</div>
+    <div class="zoom"><button id="zi">+</button><button id="zo">−</button></div>
+  </div>
+  <div id="panel">
+    <div class="row">
+      <button class="p" id="loc">Mi posición</button>
+      <button id="rec">Grabar recorrido</button>
+    </div>
+    <div class="row">
+      <input id="name" placeholder="Nombre (muelle, arroyo, guardería…)">
+      <button class="p" id="add">Marcar centro</button>
+    </div>
+    <div id="list"></div>
+    <div class="note">Prototipo: los puntos y recorridos se guardan solo en este navegador.</div>
+  </div>
+</div>
+<script>
+(function(){
+var cv=document.getElementById('c'),ctx=cv.getContext('2d'),dpr=window.devicePixelRatio||1;
+var S={lat:-34.38,lng:-58.57,z:11,marks:[],track:[],me:null,rec:false};
+try{var sv=JSON.parse(localStorage.getItem('delta')||'null');if(sv){S.marks=sv.marks||[];S.track=sv.track||[];if(sv.lat){S.lat=sv.lat;S.lng=sv.lng;S.z=sv.z}}}catch(e){}
+function save(){try{localStorage.setItem('delta',JSON.stringify({marks:S.marks,track:S.track,lat:S.lat,lng:S.lng,z:S.z}))}catch(e){}}
+function W(z){return 256*Math.pow(2,z)}
+function px(lat,lng,z){var w=W(z),s=Math.sin(lat*Math.PI/180);return{x:(lng+180)/360*w,y:(0.5-Math.log((1+s)/(1-s))/(4*Math.PI))*w}}
+function ll(x,y,z){var w=W(z),n=Math.PI-2*Math.PI*y/w;return{lat:180/Math.PI*Math.atan(0.5*(Math.exp(n)-Math.exp(-n))),lng:x/w*360-180}}
+function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim()}
+var tiles={};
+function tile(z,x,y){var k=z+'/'+x+'/'+y;if(tiles[k])return tiles[k];var im=new Image();im.onload=function(){im.ok=1;draw()};im.onerror=function(){};
+im.src='https://tile.openstreetmap.org/'+k+'.png';tiles[k]=im;return im}
+function size(){var r=cv.getBoundingClientRect();cv.width=r.width*dpr;cv.height=r.height*dpr;draw()}
+function draw(){
+var w=cv.width/dpr,h=cv.height/dpr;ctx.setTransform(dpr,0,0,dpr,0,0);
+ctx.fillStyle=css('--bg');ctx.fillRect(0,0,w,h);
+var c=px(S.lat,S.lng,S.z),ox=c.x-w/2,oy=c.y-h/2;
+ctx.strokeStyle=css('--grid');ctx.lineWidth=1;ctx.beginPath();
+for(var gx=-(ox%64);gx<w;gx+=64){ctx.moveTo(gx,0);ctx.lineTo(gx,h)}
+for(var gy=-(oy%64);gy<h;gy+=64){ctx.moveTo(0,gy);ctx.lineTo(w,gy)}
+ctx.stroke();
+var n=Math.pow(2,S.z);
+for(var tx=Math.floor(ox/256);tx<=Math.floor((ox+w)/256);tx++)for(var ty=Math.floor(oy/256);ty<=Math.floor((oy+h)/256);ty++){
+if(ty<0||ty>=n)continue;var im=tile(S.z,((tx%n)+n)%n,ty);if(im.ok)ctx.drawImage(im,tx*256-ox,ty*256-oy,256,256)}
+function P(p){var q=px(p.lat,p.lng,S.z);return{x:q.x-ox,y:q.y-oy}}
+if(S.track.length>1){ctx.strokeStyle=css('--accent');ctx.lineWidth=3;ctx.beginPath();S.track.forEach(function(p,i){var q=P(p);i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y)});ctx.stroke()}
+S.marks.forEach(function(m){var q=P(m);ctx.fillStyle=css('--danger');ctx.beginPath();ctx.arc(q.x,q.y,7,0,7);ctx.fill();
+ctx.fillStyle=css('--fg');ctx.font='12px system-ui';ctx.fillText(m.name,q.x+10,q.y+4)});
+if(S.me){var q=P(S.me);ctx.fillStyle='rgba(10,124,140,.25)';ctx.beginPath();ctx.arc(q.x,q.y,16,0,7);ctx.fill();
+ctx.fillStyle='#0a7c8c';ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.beginPath();ctx.arc(q.x,q.y,7,0,7);ctx.fill();ctx.stroke()}
+document.getElementById('info').textContent=S.lat.toFixed(5)+', '+S.lng.toFixed(5)+' · zoom '+S.z}
+var drag=null;
+cv.addEventListener('pointerdown',function(e){drag={x:e.clientX,y:e.clientY};cv.setPointerCapture(e.pointerId)});
+cv.addEventListener('pointermove',function(e){if(!drag)return;var c=px(S.lat,S.lng,S.z),p=ll(c.x-(e.clientX-drag.x),c.y-(e.clientY-drag.y),S.z);S.lat=Math.max(-85,Math.min(85,p.lat));S.lng=p.lng;drag={x:e.clientX,y:e.clientY};draw()});
+cv.addEventListener('pointerup',function(){drag=null;save()});
+cv.addEventListener('wheel',function(e){e.preventDefault();zoom(e.deltaY<0?1:-1)},{passive:false});
+function zoom(d){S.z=Math.max(3,Math.min(18,S.z+d));draw();save()}
+document.getElementById('zi').onclick=function(){zoom(1)};
+document.getElementById('zo').onclick=function(){zoom(-1)};
+function dist(a,b){var R=6371,t=Math.PI/180,dl=(b.lat-a.lat)*t,dn=(b.lng-a.lng)*t,x=Math.sin(dl/2)*Math.sin(dl/2)+Math.cos(a.lat*t)*Math.cos(b.lat*t)*Math.sin(dn/2)*Math.sin(dn/2);return 2*R*Math.asin(Math.sqrt(x))}
+function list(){var el=document.getElementById('list');el.innerHTML='';
+S.marks.forEach(function(m,i){var d=document.createElement('div');d.className='item';
+var s=document.createElement('span');s.textContent=m.name;
+if(S.me){var k=document.createElement('small');k.textContent=' · '+dist(S.me,m).toFixed(1)+' km';s.appendChild(k)}
+s.onclick=function(){S.lat=m.lat;S.lng=m.lng;S.z=Math.max(S.z,14);draw();save()};
+var b=document.createElement('button');b.textContent='✕';b.onclick=function(){S.marks.splice(i,1);list();draw();save()};
+d.appendChild(s);d.appendChild(b);el.appendChild(d)})}
+document.getElementById('add').onclick=function(){var inp=document.getElementById('name');
+S.marks.push({name:inp.value.trim()||('Punto '+(S.marks.length+1)),lat:S.lat,lng:S.lng});inp.value='';list();draw();save()};
+var wid=null,first=true;
+document.getElementById('loc').onclick=function(){
+if(!navigator.geolocation){alert('Este navegador no tiene geolocalización');return}
+if(wid!==null)navigator.geolocation.clearWatch(wid);first=true;
+wid=navigator.geolocation.watchPosition(function(p){S.me={lat:p.coords.latitude,lng:p.coords.longitude};
+if(first){S.lat=S.me.lat;S.lng=S.me.lng;S.z=Math.max(S.z,14);first=false}
+if(S.rec&&p.coords.accuracy<50)S.track.push(S.me);list();draw();save()},
+function(){alert('No pude obtener tu ubicación. Revisá los permisos.')},{enableHighAccuracy:true})};
+document.getElementById('rec').onclick=function(){S.rec=!S.rec;var b=document.getElementById('rec');
+b.className=S.rec?'rec':'';b.textContent=S.rec?'Detener grabación':'Grabar recorrido';
+if(S.rec){S.track=[];if(wid===null)document.getElementById('loc').click()}save()};
+window.addEventListener('resize',size);size();list();
+})();
+</script>
+</body>
+</html>
