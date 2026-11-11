@@ -22,7 +22,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-acti
 .cross{position:absolute;left:50%;top:50%;width:24px;height:24px;margin:-12px 0 0 -12px;pointer-events:none;opacity:.8}
 .cross:before,.cross:after{content:"";position:absolute;background:var(--accent)}
 .cross:before{left:11px;top:0;width:2px;height:24px}.cross:after{top:11px;left:0;height:2px;width:24px}
-.hud{position:absolute;left:10px;top:10px;background:var(--panel);border-radius:12px;padding:8px 12px;box-shadow:0 2px 8px rgba(0,0,0,.2);display:flex;flex-direction:column;gap:4px;min-width:96px}
+.hud{position:absolute;left:10px;top:68px;background:var(--panel);border-radius:12px;padding:8px 12px;box-shadow:0 2px 8px rgba(0,0,0,.2);display:flex;flex-direction:column;gap:4px;min-width:96px}
 .hud b{font-size:20px;font-variant-numeric:tabular-nums}.hud small{color:var(--muted);font-size:12px}
 .scale{height:6px;border:2px solid var(--fg);border-top:none;margin-top:2px;box-sizing:content-box}
 .fabs{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:8px}
@@ -43,6 +43,27 @@ input{flex:1;min-width:0;min-height:46px;padding:0 12px;border-radius:12px;borde
 .item span{flex:1;padding:10px 0}.item small{color:var(--muted)}
 .item button{width:44px;height:44px;border:none;background:none;color:var(--danger);font-size:18px}
 .empty{color:var(--muted);font-size:14px;padding:6px 0}
+.hud,.fab,#sheet,#menu,.mini{background:color-mix(in srgb,var(--panel) 58%,transparent);-webkit-backdrop-filter:blur(22px) saturate(180%);backdrop-filter:blur(22px) saturate(180%);border:1px solid rgba(255,255,255,.3)}
+.fab,.btn,.mini,.tab{transition:transform .2s ease,background .25s ease,color .25s ease}
+#sheet{transition:max-height .35s ease}
+.burger{position:absolute;left:10px;top:10px}
+#scrim{position:absolute;inset:0;background:rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:opacity .3s ease;z-index:4}
+#scrim.on{opacity:1;pointer-events:auto}
+#menu{position:absolute;top:0;bottom:0;left:0;width:min(88%,380px);transform:translateX(-105%);transition:transform .4s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:0 24px 24px 0;z-index:5;box-sizing:border-box}
+#menu.open{transform:none}
+.mh{display:flex;align-items:center;justify-content:space-between;font-size:18px}
+.tabs{display:flex;gap:6px}
+.tab{flex:1;min-height:38px;border:none;border-radius:10px;background:transparent;color:var(--muted);font-size:13px;font-weight:600}
+.tab.on{background:var(--accent);color:#fff}
+.mb{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column}
+.mi,.lr{display:flex;align-items:center;gap:6px;min-height:50px;border-top:1px solid var(--grid)}
+.lr{justify-content:space-between}
+.mi span{flex:1;padding:8px 0}
+.ei{min-height:40px}
+.sw{width:52px;height:30px;border-radius:15px;border:none;background:var(--grid);position:relative;transition:background .25s ease;flex:none}
+.sw i{position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:transform .25s ease}
+.sw.on{background:var(--accent)}.sw.on i{transform:translateX(22px)}
+.seg{display:flex;gap:6px}
 .route{background:var(--bg);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;font-size:15px}
 .route small{color:var(--muted);font-size:12px}
 .rr{display:flex;align-items:center;gap:10px}.rr span{min-width:48px;text-align:center;font-variant-numeric:tabular-nums}
@@ -63,6 +84,27 @@ var html=htm.bind(React.createElement);
 var dpr=Math.min(window.devicePixelRatio||1,3);
 var DIRS=['N','NE','E','SE','S','SO','O','NO'];
 function bearing(a,b){var t=Math.PI/180,y=Math.sin((b.lng-a.lng)*t)*Math.cos(b.lat*t),x=Math.cos(a.lat*t)*Math.sin(b.lat*t)-Math.sin(a.lat*t)*Math.cos(b.lat*t)*Math.cos((b.lng-a.lng)*t);return (Math.atan2(y,x)/t+360)%360}
+function solve(els,A,B){
+  var P={},adj={};
+  els.forEach(function(w){var g=w.geometry,ns=w.nodes;if(!g||!ns)return;
+    for(var i=0;i<ns.length;i++){var id=ns[i];if(!g[i])continue;
+      if(!P[id]){P[id]={lat:g[i].lat,lng:g[i].lon};adj[id]=[]}
+      if(i>0&&P[ns[i-1]]){var u=ns[i-1],d=dist(P[u],P[id]);adj[u].push([id,d]);adj[id].push([u,d])}}});
+  var ids=Object.keys(P);if(!ids.length)return{ok:false,msg:'No hay cauces mapeados en esta zona'};
+  function near(p){var b=null,bd=1e9;ids.forEach(function(k){var x=dist(p,P[k]);if(x<bd){bd=x;b=k}});return{id:b,d:bd}}
+  var a=near(A),b=near(B);
+  if(a.d>2||b.d>2)return{ok:false,msg:'Tu posición o el destino están a más de 2 km de un cauce mapeado'};
+  var dd={},prev={},done={},H=[];
+  function push(x){H.push(x);var i=H.length-1;while(i>0){var p=(i-1)>>1;if(H[p][0]<=H[i][0])break;var t=H[p];H[p]=H[i];H[i]=t;i=p}}
+  function pop(){var top=H[0],last=H.pop();if(H.length){H[0]=last;var i=0;for(;;){var l=2*i+1,r=l+1,s=i;if(l<H.length&&H[l][0]<H[s][0])s=l;if(r<H.length&&H[r][0]<H[s][0])s=r;if(s===i)break;var t=H[s];H[s]=H[i];H[i]=t;i=s}}return top}
+  dd[a.id]=0;push([0,a.id]);
+  while(H.length){var cur=pop(),u=cur[1];if(done[u])continue;done[u]=1;if(u===b.id)break;
+    adj[u].forEach(function(e){var v=e[0],nd=cur[0]+e[1];if(dd[v]===undefined||nd<dd[v]){dd[v]=nd;prev[v]=u;push([nd,v])}})}
+  if(dd[b.id]===undefined)return{ok:false,msg:'No encontré un camino continuo por los cauces mapeados'};
+  var path=[],k=b.id;while(k!==undefined){path.push(P[k]);k=prev[k]}
+  path.reverse();
+  return{ok:true,pts:[A].concat(path,[B]),km:dd[b.id]+a.d+b.d};
+}
 function fmtT(h){var m=Math.round(h*60);return m>=60?Math.floor(m/60)+' h '+(m%60)+' min':m+' min'}
 var NICE=[1,2,5,10,20,50,100,200,500,1000,2000,5000,10000,20000,50000,100000];
 
@@ -90,12 +132,20 @@ function App(){
   var satR=useRef(false);
   var _d=useState(null),dest=_d[0],setDest=_d[1];
   var _sp=useState(8),cruise=_sp[0],setCruise=_sp[1];
+  var _ro=useState(null),route=_ro[0],setRoute=_ro[1];
+  var _rg=useState(false),routing=_rg[0],setRouting=_rg[1];
+  var _mn=useState(false),menu=_mn[0],setMenu=_mn[1];
+  var _tb=useState('puntos'),tab=_tb[0],setTab=_tb[1];
+  var _ly=useState(sv.current.layers||{marks:true,track:true,route:true,wx:true}),layers=_ly[0],setLayers=_ly[1];
+  var _ed=useState(-1),ed=_ed[0],setEd=_ed[1];
+  var _ev=useState(''),edv=_ev[0],setEdv=_ev[1];
+  var _th=useState(function(){try{return localStorage.getItem('delta_theme')||'auto'}catch(e){return 'auto'}}),theme=_th[0],setTheme=_th[1];
 
   var cv=useRef(null),sc=useRef(null),scl=useRef(null),raf=useRef(0),tiles=useRef({}),drawRef=useRef(null);
   var D=useRef({}),wid=useRef(null),first=useRef(true),lock=useRef(null),trk=useRef(track),kmR=useRef(0),recR=useRef(false),tt=useRef(0);
-  D.current={marks:marks,track:track,me:me,dest:dest};
+  D.current={marks:marks,track:track,me:me,dest:dest,route:route,layers:layers};
 
-  function save(){try{localStorage.setItem('delta',JSON.stringify({marks:D.current.marks,track:D.current.track,lat:V.current.lat,lng:V.current.lng,z:V.current.z}))}catch(e){}}
+  function save(){try{localStorage.setItem('delta',JSON.stringify({marks:D.current.marks,track:D.current.track,layers:D.current.layers,lat:V.current.lat,lng:V.current.lng,z:V.current.z}))}catch(e){}}
   function req(){if(!raf.current)raf.current=requestAnimationFrame(function(){raf.current=0;if(drawRef.current)drawRef.current()})}
   function say(t){setToast(t);clearTimeout(tt.current);tt.current=setTimeout(function(){setToast('')},1800)}
   function tile(z,x,y){var sat=satR.current,k=(sat?'s/':'o/')+z+'/'+x+'/'+y,T=tiles.current;if(T[k])return T[k];var im=new Image();im.onload=function(){im.ok=1;req()};im.onerror=function(){};
@@ -114,10 +164,10 @@ function App(){
     for(var tx=Math.floor(ox/ts);tx<=Math.floor((ox+w)/ts);tx++)for(var ty=Math.floor(oy/ts);ty<=Math.floor((oy+h)/ts);ty++){
       if(ty<0||ty>=n)continue;var im=tile(zt,((tx%n)+n)%n,ty);if(im.ok)ctx.drawImage(im,tx*ts-ox,ty*ts-oy,ts+.5,ts+.5)}
     function P(p){var q=px(p.lat,p.lng,v.z);return{x:q.x-ox,y:q.y-oy}}
-    if(d.track.length>1){ctx.strokeStyle=css('--accent');ctx.lineWidth=4;ctx.lineJoin='round';ctx.beginPath();d.track.forEach(function(p,i){var q=P(p);i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y)});ctx.stroke()}
-    d.marks.forEach(function(m){var q=P(m);ctx.fillStyle=css('--danger');ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.beginPath();ctx.arc(q.x,q.y,8,0,7);ctx.fill();ctx.stroke();
+    if(d.layers.track&&d.track.length>1){ctx.strokeStyle=css('--accent');ctx.lineWidth=4;ctx.lineJoin='round';ctx.beginPath();d.track.forEach(function(p,i){var q=P(p);i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y)});ctx.stroke()}
+    (d.layers.marks?d.marks:[]).forEach(function(m){var q=P(m);ctx.fillStyle=css('--danger');ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.beginPath();ctx.arc(q.x,q.y,8,0,7);ctx.fill();ctx.stroke();
       ctx.font='600 13px system-ui';ctx.lineWidth=3;ctx.strokeStyle=css('--bg');ctx.strokeText(m.name,q.x+12,q.y+5);ctx.fillStyle=css('--fg');ctx.fillText(m.name,q.x+12,q.y+5)});
-    if(d.dest){var dq=P(d.dest);if(d.me){var mq=P(d.me);ctx.setLineDash([10,8]);ctx.strokeStyle=css('--accent');ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(mq.x,mq.y);ctx.lineTo(dq.x,dq.y);ctx.stroke();ctx.setLineDash([])}
+    if(d.dest&&d.layers.route){var dq=P(d.dest);if(d.route&&d.route.ok){ctx.strokeStyle='#e8a317';ctx.lineWidth=5;ctx.lineJoin='round';ctx.beginPath();d.route.pts.forEach(function(p,i){var q=P(p);i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y)});ctx.stroke()}else if(d.me){var mq=P(d.me);ctx.setLineDash([10,8]);ctx.strokeStyle=css('--accent');ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(mq.x,mq.y);ctx.lineTo(dq.x,dq.y);ctx.stroke();ctx.setLineDash([])}
       ctx.fillStyle='#e8a317';ctx.strokeStyle='#fff';ctx.lineWidth=3;ctx.beginPath();ctx.arc(dq.x,dq.y,10,0,7);ctx.fill();ctx.stroke()}
     if(d.me){var q=P(d.me);ctx.fillStyle='rgba(10,124,140,.25)';ctx.beginPath();ctx.arc(q.x,q.y,18,0,7);ctx.fill();
       ctx.fillStyle='#0a7c8c';ctx.strokeStyle='#fff';ctx.lineWidth=3;ctx.beginPath();ctx.arc(q.x,q.y,8,0,7);ctx.fill();ctx.stroke()}
@@ -153,7 +203,7 @@ function App(){
       c.removeEventListener('wheel',wheel);window.removeEventListener('resize',size);document.removeEventListener('visibilitychange',vis)}
   },[]);
 
-  useEffect(function(){req();save()},[marks,track,me,dest]);
+  useEffect(function(){req();save()},[marks,track,me,dest,route,layers]);
 
   function wake(){try{if(navigator.wakeLock)navigator.wakeLock.request('screen').then(function(l){lock.current=l}).catch(function(){})}catch(e){}}
   function startGPS(){
@@ -175,6 +225,23 @@ function App(){
   function addMark(){var nm=name.trim()||('Punto '+(marks.length+1));
     setMarks(marks.concat([{name:nm,lat:V.current.lat,lng:V.current.lng}]));setName('');
     if(document.activeElement)document.activeElement.blur();say('Guardado: '+nm)}
+  useEffect(function(){setRoute(null)},[dest]);
+  useEffect(function(){var r=document.documentElement;if(theme==='auto')r.removeAttribute('data-theme');else r.setAttribute('data-theme',theme);
+    try{localStorage.setItem('delta_theme',theme)}catch(e){}req()},[theme]);
+  function setLayer(k){var n=Object.assign({},layers);n[k]=!n[k];setLayers(n)}
+  function saveEd(i){var nm=edv.trim();if(nm)setMarks(marks.map(function(m,j){return j===i?{name:nm,lat:m.lat,lng:m.lng}:m}));setEd(-1)}
+  function sw(on,fn){return html`<button className=${'sw'+(on?' on':'')} onClick=${fn} aria-label="Activar o desactivar"><i></i></button>`}
+  function calcRoute(){
+    var m=D.current.me,d=D.current.dest;
+    if(!m||!d){say('Necesito tu posición (◎) y un destino');return}
+    setRouting(true);setRoute(null);
+    var pad=0.04,s=Math.min(m.lat,d.lat)-pad,n=Math.max(m.lat,d.lat)+pad,w=Math.min(m.lng,d.lng)-pad,e=Math.max(m.lng,d.lng)+pad;
+    var q='[out:json][timeout:25];way["waterway"~"^(river|canal|stream|tidal_channel)$"]('+[s,w,n,e].join(',')+');out geom;';
+    fetch('https://overpass-api.de/api/interpreter',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'data='+encodeURIComponent(q)})
+      .then(function(r){if(!r.ok)throw new Error('http');return r.json()})
+      .then(function(j){var r=solve(j.elements||[],m,d);setRoute(r);setRouting(false);if(!r.ok)say(r.msg)})
+      .catch(function(){setRouting(false);say('No pude bajar los cauces. Probá de nuevo en un rato.')});
+  }
   function setDestHere(){setDest({lat:V.current.lat,lng:V.current.lng});say('Destino marcado')}
   function goTo(m){V.current.lat=m.lat;V.current.lng=m.lng;V.current.z=Math.max(V.current.z,14);req();save()}
   function del(i){setMarks(marks.filter(function(_,j){return j!==i}))}
@@ -189,12 +256,13 @@ function App(){
     go();var id=setInterval(go,600000);return function(){alive=false;clearInterval(id)}
   },[]);
 
+  var rk=(route&&route.ok)?route.km:(me&&dest?dist(me,dest):0);
   var dst=rec?'Grabando… '+(km/1.852).toFixed(2)+' mn':(km?(km/1.852).toFixed(2)+' mn recorridas':'Sin grabar');
 
   return html`<div id="app">
     <canvas ref=${cv}></canvas>
     <div className="cross"></div>
-    <div className="hud"><b>${spd} nd</b><small>${dst}</small><div className="scale" ref=${sc}></div><small ref=${scl}></small>${wx?html`<small>Viento ${Math.round(wx.wind_speed_10m)} nd ${DIRS[Math.round(wx.wind_direction_10m/45)%8]} · ráf. ${Math.round(wx.wind_gusts_10m)}</small><small>${Math.round(wx.temperature_2m)} °C</small>`:null}<small>© ${sat?'Esri':'OpenStreetMap'}</small></div>
+    <div className="hud"><b>${spd} nd</b><small>${dst}</small><div className="scale" ref=${sc}></div><small ref=${scl}></small>${wx&&layers.wx?html`<small>Viento ${Math.round(wx.wind_speed_10m)} nd ${DIRS[Math.round(wx.wind_direction_10m/45)%8]} · ráf. ${Math.round(wx.wind_gusts_10m)}</small><small>${Math.round(wx.temperature_2m)} °C</small>`:null}<small>© ${sat?'Esri':'OpenStreetMap'}</small></div>
     <div className="fabs">
       <button className="fab" aria-label="Acercar" onClick=${function(){step(1)}}>+</button>
       <button className="fab" aria-label="Alejar" onClick=${function(){step(-1)}}>−</button>
@@ -202,6 +270,40 @@ function App(){
       <button className="fab" aria-label="Satélite" onClick=${toggleSat}>${sat?'🗺':'🛰'}</button>
     </div>
     <div id="toast" className=${toast?'on':''}>${toast}</div>
+    <button className="fab burger" aria-label="Menú" onClick=${function(){setMenu(true)}}>☰</button>
+    <div id="scrim" className=${menu?'on':''} onClick=${function(){setMenu(false)}}></div>
+    <div id="menu" className=${menu?'open':''}>
+      <div className="mh"><b>Menú</b><button className="mini" onClick=${function(){setMenu(false)}}>Cerrar</button></div>
+      <div className="tabs">${[['puntos','Puntos'],['capas','Capas'],['historial','Historial'],['ajustes','Ajustes']].map(function(t){
+        return html`<button key=${t[0]} className=${'tab'+(tab===t[0]?' on':'')} onClick=${function(){setTab(t[0])}}>${t[1]}</button>`})}</div>
+      <div className="mb">
+        ${tab==='puntos'?(marks.length?marks.map(function(m,i){return html`<div className="mi" key=${i}>
+            ${ed===i
+              ?html`<input className="ei" value=${edv} onInput=${function(e){setEdv(e.target.value)}} onKeyDown=${function(e){if(e.key==='Enter')saveEd(i)}} />
+                <button className="mini" onClick=${function(){saveEd(i)}}>OK</button>`
+              :html`<span onClick=${function(){goTo(m);setMenu(false)}}>${m.name}${me?html`<small style=${{color:'var(--muted)'}}> · ${dist(me,m).toFixed(1)} km</small>`:null}</span>
+                <button className="mini" aria-label="Renombrar" onClick=${function(){setEd(i);setEdv(m.name)}}>✎</button>
+                <button className="mini" aria-label="Ir" onClick=${function(){setDest(m);setMenu(false)}}>➤</button>
+                <button className="mini" aria-label="Borrar" style=${{color:'var(--danger)'}} onClick=${function(){del(i)}}>✕</button>`}
+          </div>`}):html`<div className="empty">Todavía no guardaste ningún punto. Usá Marcar en el mapa.</div>`)
+        :tab==='capas'?html`<div>
+            <div className="lr"><span>Puntos guardados</span>${sw(layers.marks,function(){setLayer('marks')})}</div>
+            <div className="lr"><span>Recorrido grabado</span>${sw(layers.track,function(){setLayer('track')})}</div>
+            <div className="lr"><span>Destino y ruta</span>${sw(layers.route,function(){setLayer('route')})}</div>
+            <div className="lr"><span>Viento y clima</span>${sw(layers.wx,function(){setLayer('wx')})}</div>
+            <div className="lr"><span>Vista satelital</span>${sw(sat,toggleSat)}</div>
+          </div>`
+        :tab==='historial'?html`<div className="empty">Acá van a aparecer tus búsquedas cuando sumemos el buscador.</div>`
+        :html`<div>
+            <div className="lr"><span>Tema</span><div className="seg">${[['auto','Auto'],['light','Claro'],['dark','Oscuro']].map(function(t){
+              return html`<button key=${t[0]} className=${'tab'+(theme===t[0]?' on':'')} style=${{padding:'0 10px'}} onClick=${function(){setTheme(t[0])}}>${t[1]}</button>`})}</div></div>
+            <div className="lr"><span>Velocidad de crucero</span><div className="seg">
+              <button className="mini" onClick=${function(){setCruise(Math.max(1,cruise-1))}}>−</button><span>${cruise} nd</span>
+              <button className="mini" onClick=${function(){setCruise(Math.min(40,cruise+1))}}>+</button></div></div>
+            <div className="lr"><span>Borrar recorrido grabado</span><button className="mini" style=${{color:'var(--danger)'}} onClick=${function(){trk.current=[];kmR.current=0;setTrack([]);setKm(0);say('Recorrido borrado')}}>Borrar</button></div>
+          </div>`}
+      </div>
+    </div>
     <div id="sheet" className=${open?'open':''}>
       <div id="handle" onClick=${function(){setOpen(!open)}}><i></i></div>
       <div className="row">
@@ -212,16 +314,17 @@ function App(){
         <button className="btn" onClick=${setDestHere}>Ir ahí</button>
       </div>
       ${dest?html`<div className="route">
-        ${me?html`<div><b>${(dist(me,dest)/1.852).toFixed(1)} mn</b> · ${dist(me,dest).toFixed(1)} km · rumbo ${Math.round(bearing(me,dest))}°</div>
-          <div>Llegada en <b>${fmtT(dist(me,dest)/1.852/cruise)}</b> a ${cruise} nd</div>`
+        ${me?html`<div><b>${(rk/1.852).toFixed(1)} mn</b> · ${rk.toFixed(1)} km · ${route&&route.ok?'por agua':'en línea recta, rumbo '+Math.round(bearing(me,dest))+'°'}</div>
+          <div>Llegada en <b>${fmtT(rk/1.852/cruise)}</b> a ${cruise} nd</div>`
           :html`<div>Activá ◎ para calcular desde tu posición</div>`}
+        <button className="btn p" disabled=${routing} onClick=${calcRoute}>${routing?'Calculando…':'Ruta por agua'}</button>
         <div className="rr">
           <button className="mini" onClick=${function(){setCruise(Math.max(1,cruise-1))}}>−</button>
           <span>${cruise} nd</span>
           <button className="mini" onClick=${function(){setCruise(Math.min(40,cruise+1))}}>+</button>
           <button className="mini" onClick=${function(){setDest(null)}}>Quitar destino</button>
         </div>
-        <small>Línea recta: todavía no sigue canales ni evita bajíos.</small>
+        <small>${route?(route.ok?'Ruta sobre cauces de OpenStreetMap, sin datos de profundidad ni altura de puentes. No reemplaza las cartas oficiales.':route.msg+'. Se muestra la línea recta.'):'Línea recta. Tocá Ruta por agua para seguir los cauces.'}</small>
       </div>`:null}
       <div id="more">
         <div className="row"><input value=${name} placeholder="Nombre del punto (muelle, arroyo…)" enterKeyHint="done"
