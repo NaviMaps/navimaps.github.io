@@ -57,6 +57,7 @@ input{flex:1;min-width:0;min-height:46px;padding:0 12px;border-radius:12px;borde
 var useState=React.useState,useEffect=React.useEffect,useRef=React.useRef;
 var html=htm.bind(React.createElement);
 var dpr=Math.min(window.devicePixelRatio||1,3);
+var DIRS=['N','NE','E','SE','S','SO','O','NO'];
 var NICE=[1,2,5,10,20,50,100,200,500,1000,2000,5000,10000,20000,50000,100000];
 
 function W(z){return 256*Math.pow(2,z)}
@@ -78,6 +79,9 @@ function App(){
   var _o=useState(false),open=_o[0],setOpen=_o[1];
   var _n=useState(''),name=_n[0],setName=_n[1];
   var _to=useState(''),toast=_to[0],setToast=_to[1];
+  var _sa=useState(false),sat=_sa[0],setSat=_sa[1];
+  var _w=useState(null),wx=_w[0],setWx=_w[1];
+  var satR=useRef(false);
 
   var cv=useRef(null),sc=useRef(null),scl=useRef(null),raf=useRef(0),tiles=useRef({}),drawRef=useRef(null);
   var D=useRef({}),wid=useRef(null),first=useRef(true),lock=useRef(null),trk=useRef(track),kmR=useRef(0),recR=useRef(false),tt=useRef(0);
@@ -86,8 +90,8 @@ function App(){
   function save(){try{localStorage.setItem('delta',JSON.stringify({marks:D.current.marks,track:D.current.track,lat:V.current.lat,lng:V.current.lng,z:V.current.z}))}catch(e){}}
   function req(){if(!raf.current)raf.current=requestAnimationFrame(function(){raf.current=0;if(drawRef.current)drawRef.current()})}
   function say(t){setToast(t);clearTimeout(tt.current);tt.current=setTimeout(function(){setToast('')},1800)}
-  function tile(z,x,y){var k=z+'/'+x+'/'+y,T=tiles.current;if(T[k])return T[k];var im=new Image();im.onload=function(){im.ok=1;req()};im.onerror=function(){};
-    im.src='https://tile.openstreetmap.org/'+k+'.png';T[k]=im;return im}
+  function tile(z,x,y){var sat=satR.current,k=(sat?'s/':'o/')+z+'/'+x+'/'+y,T=tiles.current;if(T[k])return T[k];var im=new Image();im.onload=function(){im.ok=1;req()};im.onerror=function(){};
+    im.src=sat?'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/'+z+'/'+y+'/'+x:'https://tile.openstreetmap.org/'+z+'/'+x+'/'+y+'.png';T[k]=im;return im}
 
   drawRef.current=function(){
     var c=cv.current;if(!c)return;var ctx=c.getContext('2d'),w=c.width/dpr,h=c.height/dpr,v=V.current,d=D.current;
@@ -165,16 +169,26 @@ function App(){
   function del(i){setMarks(marks.filter(function(_,j){return j!==i}))}
   function step(d){zoomAt(cv.current.clientWidth/2,cv.current.clientHeight/2,Math.round(V.current.z)+d);save()}
 
+  function toggleSat(){satR.current=!satR.current;setSat(satR.current);req()}
+  useEffect(function(){
+    var alive=true;
+    function go(){var v=V.current,m=D.current.me,la=m?m.lat:v.lat,lo=m?m.lng:v.lng;
+      fetch('https://api.open-meteo.com/v1/forecast?latitude='+la.toFixed(3)+'&longitude='+lo.toFixed(3)+'&current=temperature_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m&wind_speed_unit=kn')
+        .then(function(r){return r.json()}).then(function(j){if(alive&&j.current)setWx(j.current)}).catch(function(){})}
+    go();var id=setInterval(go,600000);return function(){alive=false;clearInterval(id)}
+  },[]);
+
   var dst=rec?'Grabando… '+(km/1.852).toFixed(2)+' mn':(km?(km/1.852).toFixed(2)+' mn recorridas':'Sin grabar');
 
   return html`<div id="app">
     <canvas ref=${cv}></canvas>
     <div className="cross"></div>
-    <div className="hud"><b>${spd} nd</b><small>${dst}</small><div className="scale" ref=${sc}></div><small ref=${scl}></small></div>
+    <div className="hud"><b>${spd} nd</b><small>${dst}</small><div className="scale" ref=${sc}></div><small ref=${scl}></small>${wx?html`<small>Viento ${Math.round(wx.wind_speed_10m)} nd ${DIRS[Math.round(wx.wind_direction_10m/45)%8]} · ráf. ${Math.round(wx.wind_gusts_10m)}</small><small>${Math.round(wx.temperature_2m)} °C</small>`:null}<small>© ${sat?'Esri':'OpenStreetMap'}</small></div>
     <div className="fabs">
       <button className="fab" aria-label="Acercar" onClick=${function(){step(1)}}>+</button>
       <button className="fab" aria-label="Alejar" onClick=${function(){step(-1)}}>−</button>
       <button className="fab" aria-label="Mi posición" onClick=${locate}>◎</button>
+      <button className="fab" aria-label="Satélite" onClick=${toggleSat}>${sat?'🗺':'🛰'}</button>
     </div>
     <div id="toast" className=${toast?'on':''}>${toast}</div>
     <div id="sheet" className=${open?'open':''}>
