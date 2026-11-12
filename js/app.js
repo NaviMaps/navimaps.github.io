@@ -443,7 +443,7 @@ function App(){
           <button className="mini" onClick=${function(){setCruise(Math.max(1,cruise-1))}}>−</button>
           <span>${cruise} nd</span>
           <button className="mini" onClick=${function(){setCruise(Math.min(40,cruise+1))}}>+</button>
-          <button className="mini" onClick=${function(){setDest(null)}}>Quitar destino</button>
+          <button className="mini" onClick=${function(){setDest(null);setOrig(null);setRoute(null);autoR.current=false}}>Quitar destino</button>
         </div>
         <small>${route?(route.ok?'Ruta sobre cauces de OpenStreetMap que prioriza ríos, luego canales y arroyos. No sabe si un arroyo está seco ni las alturas de puentes. No reemplaza las cartas oficiales.':route.msg+'. Se muestra la línea recta.'):'Línea recta. Tocá Ruta por agua para seguir los cauces.'}</small>
       </div>
