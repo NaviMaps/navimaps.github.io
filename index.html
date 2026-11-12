@@ -143,7 +143,28 @@ var CATS=[
 var KIND={restaurant:'Restaurante',fuel:'Estación de servicio',cafe:'Café',bar:'Bar',pub:'Bar',marina:'Marina',pier:'Muelle',boatyard:'Guardería / astillero',supermarket:'Supermercado',convenience:'Proveeduría',general:'Almacén',hotel:'Hotel',guest_house:'Alojamiento',chalet:'Cabaña',hostel:'Hostel',camp_site:'Camping',pharmacy:'Farmacia',hospital:'Hospital',clinic:'Clínica'};
 var WTR={river:'río',stream:'arroyo',canal:'canal',tidal_channel:'canal de marea'};
 function kindOf(t){var k=t.amenity||t.leisure||t.tourism||t.shop||t.man_made||t.waterway||'';return KIND[k]||k||'Lugar'}
-function ovp(q){return fetch('https://overpass-api.de/api/interpreter',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'data='+encodeURIComponent(q)}).then(function(r){if(!r.ok)throw new Error('http');return r.json()})}
+var CACHE={},LOCAL=null,EPS=['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter','https://overpass.private.coffee/api/interpreter'];
+function hash(s){var h=5381;for(var i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return (h>>>0).toString(36)}
+function store(q,j){try{var s=JSON.stringify(j);if(s.length>300000)return;var k='delta_c_'+hash(q),L=JSON.parse(localStorage.getItem('delta_cl')||'[]').filter(function(x){return x!==k});
+  L.push(k);while(L.length>10)localStorage.removeItem(L.shift());localStorage.setItem(k,s);localStorage.setItem('delta_cl',JSON.stringify(L))}catch(e){}}
+function ovp(q,onTry){
+  if(CACHE[q])return Promise.resolve(CACHE[q]);
+  try{var c0=localStorage.getItem('delta_c_'+hash(q));if(c0){CACHE[q]=JSON.parse(c0);return Promise.resolve(CACHE[q])}}catch(e){}
+  return new Promise(function(res,rej){
+    var done=false,fails=0,st={},ctl=[],tm=[];
+    function stop(){done=true;tm.forEach(clearTimeout);ctl.forEach(function(c){try{c.abort()}catch(e){}})}
+    function go(i){if(done||i>=EPS.length||st[i])return;st[i]=1;var c=new AbortController();ctl.push(c);if(onTry)onTry(i);
+      fetch(EPS[i],{method:'POST',signal:c.signal,headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'data='+encodeURIComponent(q)})
+        .then(function(r){if(!r.ok)throw new Error('http '+r.status);return r.json()})
+        .then(function(j){if(!j||!j.elements||j.remark)throw new Error('incompleto');if(done)return;stop();CACHE[q]=j;store(q,j);res(j)})
+        .catch(function(){if(done)return;fails++;if(fails>=EPS.length){stop();rej(new Error('fail'))}else go(i+1)})}
+    go(0);tm.push(setTimeout(function(){go(1)},7000),setTimeout(function(){go(2)},14000),setTimeout(function(){if(!done){stop();rej(new Error('timeout'))}},45000))})}
+function loadLocal(){fetch('cauces.json').then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(j){var sn={};LOCAL=(j&&j.elements)?j.elements.filter(function(x){if(x.id==null)return true;if(sn[x.id])return false;sn[x.id]=1;return true}):null;window.dispatchEvent(new Event('delta-local'))}).catch(function(){})}
+loadLocal();
+function waterEls(s,w,n,e,onTry){
+  if(LOCAL)return Promise.resolve(LOCAL.filter(function(x){var g=x.geometry;if(!g)return false;for(var i=0;i<g.length;i++){var p=g[i];if(p&&p.lat>=s&&p.lat<=n&&p.lon>=w&&p.lon<=e)return true}return false}));
+  var q='[out:json][timeout:25];way["waterway"~"^(river|canal|stream|tidal_channel)$"]('+[s,w,n,e].map(function(x){return x.toFixed(2)}).join(',')+');out geom;';
+  return ovp(q,onTry).then(function(j){return j.elements||[]})}
 function parseRes(els){var out=[],by={};
   els.forEach(function(e){var tg=e.tags||{};
     if(e.type==='way'&&tg.waterway&&e.geometry){var nm=tg.name||'Curso sin nombre',r=by[nm];
@@ -199,6 +220,8 @@ function App(){
   var cmp=useRef(null),hy=useRef(0);
   var _co=useState(false),col=_co[0],setCol=_co[1];
   var _pf=useState(function(){try{var x=parseInt(localStorage.getItem('delta_pref'),10);return x>=0&&x<=2?x:2}catch(e){return 2}}),pref=_pf[0],setPref=_pf[1];
+  var _lc=useState(LOCAL?LOCAL.length:0),lc=_lc[0],setLc=_lc[1];
+  useEffect(function(){function f(){setLc(LOCAL?LOCAL.length:0)}window.addEventListener('delta-local',f);f();return function(){window.removeEventListener('delta-local',f)}},[]);
   function setPrefP(i){setPref(i);try{localStorage.setItem('delta_pref',String(i))}catch(e){}}
   var _th=useState(function(){try{return localStorage.getItem('delta_theme')||'auto'}catch(e){return 'auto'}}),theme=_th[0],setTheme=_th[1];
 
@@ -313,12 +336,14 @@ function App(){
   function runSearch(text){
     var t=(typeof text==='string'?text:q).trim();if(!t)return;
     setQ(t);setSopen(true);setSel(-1);setSearching(true);addHist(t);
-    var v=V.current,la=v.lat,lo=v.lng,cat=null,n=norm(t),body;
+    var v=V.current,la=Math.round(v.lat*20)/20,lo=Math.round(v.lng*20)/20,cat=null,n=norm(t),body;
     CATS.forEach(function(c){if(!cat&&c.re.test(n))cat=c});
+    if(!cat&&LOCAL){var nr=n.replace(/[^a-z0-9 ]/g,''),loc=LOCAL.filter(function(x){return x.tags&&x.tags.waterway&&x.tags.name&&norm(x.tags.name).indexOf(nr)>=0});
+      if(loc.length){var r0=parseRes(loc),p0=[];setRes(r0);setSearching(false);r0.forEach(function(x){x.lines.forEach(function(l){p0=p0.concat(l)})});fitPts(p0);return}}
     if(cat)body='[out:json][timeout:25];('+cat.f.map(function(f){return 'nwr'+f+'(around:15000,'+la.toFixed(4)+','+lo.toFixed(4)+');'}).join('')+');out center tags 80;';
     else{var bb=[la-0.7,lo-0.7,la+0.7,lo+0.7].map(function(x){return x.toFixed(4)}).join(','),rx=flex(t);
       body='[out:json][timeout:25];(way["waterway"~"^(river|canal|stream|tidal_channel)$"]["name"~"'+rx+'",i]('+bb+');'+['amenity','leisure','tourism'].map(function(k){return 'nwr["name"~"'+rx+'",i]["'+k+'"]('+bb+');'}).join('')+');out geom;'}
-    ovp(body).then(function(j){var r=parseRes(j.elements||[]);setRes(r);setSearching(false);
+    ovp(body,function(i){if(i>0)say('El servidor tarda, probando otro…')}).then(function(j){var r=parseRes(j.elements||[]);setRes(r);setSearching(false);
       if(!r.length){say('No encontré resultados');return}
       var pts=[];r.forEach(function(x){if(x.lines)x.lines.forEach(function(l){pts=pts.concat(l)});else pts.push(x)});
       if(r.length===1&&!r[0].lines){setSel(0);flyTo(r[0].lat,r[0].lng,16)}else fitPts(pts)})
@@ -333,10 +358,10 @@ function App(){
     var m=D.current.orig||D.current.me,d=D.current.dest;
     if(!m||!d){say('Necesito tu posición (◎) y un destino');return}
     setRouting(true);setRoute(null);
-    var pad=0.04,s=Math.min(m.lat,d.lat)-pad,n=Math.max(m.lat,d.lat)+pad,w=Math.min(m.lng,d.lng)-pad,e=Math.max(m.lng,d.lng)+pad;
-    var q='[out:json][timeout:25];way["waterway"~"^(river|canal|stream|tidal_channel)$"]('+[s,w,n,e].join(',')+');out geom;';
-    fetch('https://overpass-api.de/api/interpreter',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'data='+encodeURIComponent(q)})
-      .then(function(r){if(!r.ok)throw new Error('http');return r.json()})
+    var G=0.05,pd=0.04,s=Math.floor((Math.min(m.lat,d.lat)-pd)/G)*G,n=Math.ceil((Math.max(m.lat,d.lat)+pd)/G)*G,w=Math.floor((Math.min(m.lng,d.lng)-pd)/G)*G,e=Math.ceil((Math.max(m.lng,d.lng)+pd)/G)*G;
+    var pr=waterEls(s,w,n,e,function(i){if(i>0)say('El servidor tarda, probando otro…')});
+    pr
+      .then(function(els){return{elements:els}})
       .then(function(j){var r=solve(j.elements||[],m,d,PREFS[pref]);setRoute(r);setRouting(false);if(!r.ok)say(r.msg)})
       .catch(function(){setRouting(false);say('No pude bajar los cauces. Probá de nuevo en un rato.')});
   }
@@ -424,6 +449,7 @@ function App(){
               <button className="mini" onClick=${function(){setCruise(Math.min(40,cruise+1))}}>+</button></div></div>
             <div className="lr" style=${{flexWrap:'wrap',padding:'8px 0'}}><span>Prioridad de cauces</span><div className="seg" style=${{width:'100%'}}>${PREFS.map(function(p,i){
               return html`<button key=${i} className=${'tab'+(pref===i?' on':'')} style=${{padding:'0 6px'}} onClick=${function(){setPrefP(i)}}>${p.n}</button>`})}</div></div>
+            <div className="lr"><span>Cauces guardados</span><small style=${{color:'var(--muted)'}}>${lc?lc.toLocaleString('es-AR')+' tramos ✓':'no cargados'}</small></div>
             <div className="lr"><span>Borrar recorrido grabado</span><button className="mini" style=${{color:'var(--danger)'}} onClick=${function(){trk.current=[];kmR.current=0;setTrack([]);setKm(0);say('Recorrido borrado')}}>Borrar</button></div>
           </div>`}
       </div>
