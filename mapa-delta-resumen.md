@@ -19,8 +19,9 @@ App web tipo "Google Maps / Wavve" para navegar los ríos y arroyos del Delta de
 13. **Rama de prueba (v3, 12/11/2026):** rama `test` publicada en `/test/` con una automatización de GitHub Actions, datos y caché separados de la versión real, y cartel "PRUEBA".
 14. **Mudanza a NaviMaps (v4, 12/11/2026):** se creó la organización gratuita **NaviMaps** en GitHub, el repositorio pasó a `NaviMaps/navimaps.github.io` y la app se llama **NaviMaps**. Dirección nueva: https://navimaps.github.io/. La vieja (`iangiribaldi.github.io/Maps-nautico/`) ya no existe.
 15. **Copia de seguridad (v5, 12/11/2026, en `test`):** Ajustes > Copia de seguridad, con botones *Exportar* (arma un `.json` con los puntos y el recorrido; en el iPhone abre Compartir para guardarlo en Archivos, WhatsApp o Mail) e *Importar* (suma los puntos sin repetir y pregunta antes de reemplazar el recorrido). Código en `js/respaldo.js`.
+16. **Pines con el dedo (v6, 12/11/2026, en `test`):** se sacó la barra de abajo (Grabar / Marcar / Ir ahí y el campo de nombre) y la mira del centro. Ahora se **mantiene apretado el mapa** medio segundo: aparece un pin rojo y una tarjeta que pide el nombre, con *Guardar*, *Ir ahí* y (si hay destino) *Salir de acá*. **Grabar** pasó a un botón redondo en la columna derecha (rojo con latido mientras graba). El panel de abajo solo aparece cuando hay un destino, con los datos de la ruta.
 
-**Estado actual:** versión `v5` en `test` (copia de seguridad), `v4` en `main`. La carpeta local trabaja en la rama `test`.
+**Estado actual:** versión `v6` en `test` (copia de seguridad y pines con el dedo), `v4` en `main`. La carpeta local trabaja en la rama `test`.
 
 ## Funciones actuales
 
@@ -34,13 +35,13 @@ App web tipo "Google Maps / Wavve" para navegar los ríos y arroyos del Delta de
 - Velocidad en nudos y datos de **viento, ráfagas y temperatura** (Open-Meteo, se actualiza cada 10 minutos).
 
 ### Puntos y recorridos
-- **Marcar** puntos con nombre en el centro del mapa.
-- **Grabar recorrido** con distancia en millas náuticas; mantiene la pantalla encendida mientras graba.
+- **Marcar** puntos manteniendo apretado el mapa: aparece un pin y una tarjeta para ponerle nombre, guardarlo, ir ahí o salir desde ahí.
+- **Grabar recorrido** (botón ⏺ de la derecha) con distancia en millas náuticas; mantiene la pantalla encendida mientras graba.
 - Todo se guarda en el navegador del celular.
 
 ### Navegación y ruta
-- **Destino** con el botón "Ir ahí", con ➤ desde un punto guardado, o desde el buscador.
-- **Origen elegible:** tu ubicación u otro punto marcado en el mapa.
+- **Destino** manteniendo apretado el mapa y tocando "Ir ahí", con ➤ desde un punto guardado, o desde el buscador.
+- **Origen elegible:** tu ubicación u otro punto (mantener apretado el mapa > "Salir de acá").
 - **Ruta por agua** calculada sobre los cauces de OpenStreetMap (algoritmo de camino más corto con pesos).
 - **Prioridad de cauces** (Ajustes): *Directa*, *Equilibrada* o *Ríos primero* (por defecto). Penaliza arroyos y cauces marcados como intermitentes o no navegables.
 - Muestra distancia (mn y km), tiempo estimado según la velocidad de crucero (ajustable) y el aviso de que no reemplaza las cartas oficiales.
@@ -59,7 +60,7 @@ App web tipo "Google Maps / Wavve" para navegar los ríos y arroyos del Delta de
 
 ### Diseño
 - Estilo de **vidrio esmerilado** (tipo liquid glass) con transiciones suaves.
-- Panel inferior **plegable** (con resumen de la ruta cuando está plegado).
+- Mapa limpio: el panel inferior **solo aparece con un destino**, y es plegable (con resumen de la ruta cuando está plegado).
 
 ### Rendimiento y datos
 - **Caché** de consultas en memoria y en el celular.

@@ -46,6 +46,7 @@ function App(){
   var _k=useState(0),km=_k[0],setKm=_k[1];
   var _s=useState('0.0'),spd=_s[0],setSpd=_s[1];
   var _n=useState(''),name=_n[0],setName=_n[1];
+  var _pn=useState(null),pin=_pn[0],setPin=_pn[1];
   var _to=useState(''),toast=_to[0],setToast=_to[1];
   var _sa=useState(!!sv.current.sat),sat=_sa[0],setSat=_sa[1];
   var _w=useState(null),wx=_w[0],setWx=_w[1];
@@ -83,7 +84,7 @@ function App(){
 
   var cv=useRef(null),sc=useRef(null),scl=useRef(null),raf=useRef(0),tiles=useRef({}),drawRef=useRef(null);
   var D=useRef({}),wid=useRef(null),first=useRef(true),lock=useRef(null),trk=useRef(track),kmR=useRef(0),recR=useRef(false),tt=useRef(0),saveT=useRef(0),fr=useRef(0);
-  D.current={marks:marks,track:track,me:me,dest:dest,route:route,layers:layers,orig:orig,res:res,sel:sel,cruise:cruise};
+  D.current={pin:pin,marks:marks,track:track,me:me,dest:dest,route:route,layers:layers,orig:orig,res:res,sel:sel,cruise:cruise};
 
   // Guarda todo en el celular. save() junta varios cambios en una sola escritura:
   // normalmente espera 0,4 s; mientras grabás, escribe como mucho cada 15 s (el recorrido puede ser largo).
@@ -150,6 +151,8 @@ function App(){
         ctx.lineCap='butt'}else if(d.orig||d.me){var mq=P(d.orig||d.me);ctx.setLineDash([10,8]);ctx.strokeStyle=C.accent;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(mq.x,mq.y);ctx.lineTo(dq.x,dq.y);ctx.stroke();ctx.setLineDash([])}
       ctx.fillStyle='#e8a317';ctx.strokeStyle='#fff';ctx.lineWidth=3;ctx.beginPath();ctx.arc(dq.x,dq.y,10,0,7);ctx.fill();ctx.stroke()}
     if(d.orig&&d.layers.route){var oq=P(d.orig);ctx.fillStyle='#2e9e5b';ctx.strokeStyle='#fff';ctx.lineWidth=3;ctx.beginPath();ctx.arc(oq.x,oq.y,10,0,7);ctx.fill();ctx.stroke()}
+    if(d.pin){var pq=P(d.pin);ctx.fillStyle='#e5484d';ctx.strokeStyle='#fff';ctx.lineWidth=3;ctx.beginPath();ctx.arc(pq.x,pq.y-22,11,Math.PI*0.8,Math.PI*2.2);ctx.lineTo(pq.x,pq.y);ctx.closePath();ctx.fill();ctx.stroke();
+      ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(pq.x,pq.y-22,4,0,7);ctx.fill()}
     if(d.me){var q=P(d.me);ctx.fillStyle='rgba(10,124,140,.25)';ctx.beginPath();ctx.arc(q.x,q.y,18,0,7);ctx.fill();
       ctx.fillStyle='#0a7c8c';ctx.strokeStyle='#fff';ctx.lineWidth=3;ctx.beginPath();ctx.arc(q.x,q.y,8,0,7);ctx.fill();ctx.stroke()}
     var mpp=156543.03*Math.cos(v.lat*Math.PI/180)/Math.pow(2,v.z),m100=100*mpp,nv=NICE[0];
@@ -162,11 +165,15 @@ function App(){
     fx=sx-w/2,fy=sy-h/2,cr=Math.cos(v.r),sr=Math.sin(v.r),ux=fx*cr+fy*sr,uy=-fx*sr+fy*cr,g=ll(c.x+ux,c.y+uy,v.z),k=px(g.lat,g.lng,nz),p=ll(k.x-ux,k.y-uy,nz);
     v.lat=Math.max(-85,Math.min(85,p.lat));v.lng=p.lng;v.z=nz;req()}
 
+  function toLL(sx,sy){var v=V.current,w=cv.current.clientWidth,h=cv.current.clientHeight,c=px(v.lat,v.lng,v.z),fx=sx-w/2,fy=sy-h/2,cr=Math.cos(v.r),sr=Math.sin(v.r);
+    return ll(c.x+fx*cr+fy*sr,c.y-fx*sr+fy*cr,v.z)}
   useEffect(function(){
     var c=cv.current,G={ptr:{},last:null,lastTap:0,pinch:null},v=V.current;
     function pos(e){var r=c.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}}
     function size(){var r=c.getBoundingClientRect();c.width=r.width*dpr;c.height=r.height*dpr;req()}
-    function down(e){setSopen(false);if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();c.setPointerCapture(e.pointerId);G.ptr[e.pointerId]=pos(e);G.last={t:Date.now(),moved:0};G.pinch=null;G.acc=0;G.rot=false}
+    function down(e){setSopen(false);if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();c.setPointerCapture(e.pointerId);G.ptr[e.pointerId]=pos(e);G.last={t:Date.now(),moved:0};G.pinch=null;G.acc=0;G.rot=false;
+      // Mantener apretado medio segundo sin mover: pone un pin ahí y pregunta el nombre
+      clearTimeout(G.lp);var p0=G.ptr[e.pointerId];G.lp=Object.keys(G.ptr).length===1?setTimeout(function(){if(G.last&&G.last.moved<10&&Object.keys(G.ptr).length===1){G.last.moved=99;var g=toLL(p0.x,p0.y);setName('');setPin({lat:g.lat,lng:g.lng})}},500):0}
     function move(e){var p=G.ptr[e.pointerId];if(!p)return;var np=pos(e),ids=Object.keys(G.ptr);
       if(ids.length===2){G.ptr[e.pointerId]=np;var a=G.ptr[ids[0]],b=G.ptr[ids[1]],d=Math.hypot(a.x-b.x,a.y-b.y),mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
         if(G.pinch){var ang=Math.atan2(b.y-a.y,b.x-a.x),da=ang-G.pinch.a;if(da>Math.PI)da-=2*Math.PI;if(da<-Math.PI)da+=2*Math.PI;
@@ -174,21 +181,23 @@ function App(){
           zoomAt(mx,my,v.z+Math.log2(d/G.pinch.d));v.r+=da;
           var cr=Math.cos(v.r),sr=Math.sin(v.r),sx=mx-G.pinch.x,sy=my-G.pinch.y,c1=px(v.lat,v.lng,v.z),q=ll(c1.x-(sx*cr+sy*sr),c1.y-(-sx*sr+sy*cr),v.z);v.lat=q.lat;v.lng=q.lng;req()}
         G.pinch={d:d,x:mx,y:my,a:Math.atan2(b.y-a.y,b.x-a.x)};if(G.last)G.last.moved=99;return}
-      var dx=np.x-p.x,dy=np.y-p.y;if(G.last)G.last.moved+=Math.abs(dx)+Math.abs(dy);
+      var dx=np.x-p.x,dy=np.y-p.y;if(G.last)G.last.moved+=Math.abs(dx)+Math.abs(dy);if(G.last&&G.last.moved>=10)clearTimeout(G.lp);
       var cr2=Math.cos(v.r),sr2=Math.sin(v.r),c2=px(v.lat,v.lng,v.z),q2=ll(c2.x-(dx*cr2+dy*sr2),c2.y-(-dx*sr2+dy*cr2),v.z);v.lat=Math.max(-85,Math.min(85,q2.lat));v.lng=q2.lng;G.ptr[e.pointerId]=np;req()}
-    function up(e){var np=pos(e);delete G.ptr[e.pointerId];G.pinch=null;
+    function up(e){var np=pos(e);clearTimeout(G.lp);delete G.ptr[e.pointerId];G.pinch=null;
       if(!Object.keys(G.ptr).length){if(G.last&&G.last.moved<8&&Date.now()-G.last.t<300){var n=Date.now();if(n-G.lastTap<320){zoomAt(np.x,np.y,v.z+1);G.lastTap=0}else G.lastTap=n}save()}}
+    function ctxm(e){e.preventDefault()}
     function wheel(e){e.preventDefault();var p=pos(e);zoomAt(p.x,p.y,v.z-e.deltaY*0.002);save()}
     function vis(){if(document.visibilityState==='visible'){if(recR.current)wake()}else saveNow()}
     c.addEventListener('pointerdown',down);c.addEventListener('pointermove',move);c.addEventListener('pointerup',up);c.addEventListener('pointercancel',up);
-    c.addEventListener('wheel',wheel,{passive:false});window.addEventListener('resize',size);document.addEventListener('visibilitychange',vis);
+    c.addEventListener('wheel',wheel,{passive:false});c.addEventListener('contextmenu',ctxm);window.addEventListener('resize',size);document.addEventListener('visibilitychange',vis);
     window.addEventListener('pagehide',saveNow);
     size();
     return function(){c.removeEventListener('pointerdown',down);c.removeEventListener('pointermove',move);c.removeEventListener('pointerup',up);c.removeEventListener('pointercancel',up);
-      c.removeEventListener('wheel',wheel);window.removeEventListener('resize',size);document.removeEventListener('visibilitychange',vis);window.removeEventListener('pagehide',saveNow)}
+      c.removeEventListener('wheel',wheel);c.removeEventListener('contextmenu',ctxm);window.removeEventListener('resize',size);document.removeEventListener('visibilitychange',vis);window.removeEventListener('pagehide',saveNow)}
   },[]);
 
   useEffect(function(){req();save()},[marks,track,me,dest,route,layers,orig,res,sel,cruise,sat]);
+  useEffect(req,[pin]);
 
   function wake(){try{if(navigator.wakeLock)navigator.wakeLock.request('screen').then(function(l){lock.current=l}).catch(function(){})}catch(e){}}
   function startGPS(){
@@ -209,9 +218,12 @@ function App(){
   function recOn(on){recR.current=on;setRec(on);
     if(on){trk.current=[];kmR.current=0;setTrack([]);setKm(0);startGPS();wake();say('Grabando. Dejá la pantalla encendida')}
     else{try{if(lock.current)lock.current.release()}catch(e){}lock.current=null;saveNow()}}
-  function addMark(){var nm=name.trim()||('Punto '+(marks.length+1));
-    setMarks(marks.concat([{name:nm,lat:V.current.lat,lng:V.current.lng}]));setName('');
-    if(document.activeElement)document.activeElement.blur();say('Guardado: '+nm)}
+  // Pin puesto con el dedo: guardarlo con nombre, ir ahí o salir desde ahí
+  function pinDone(){setPin(null);setName('');if(document.activeElement&&document.activeElement.blur)document.activeElement.blur()}
+  function addMark(){if(!pin)return;var nm=name.trim()||('Punto '+(marks.length+1));
+    setMarks(marks.concat([{name:nm,lat:pin.lat,lng:pin.lng}]));pinDone();say('Guardado: '+nm)}
+  function pinDest(){setDest({lat:pin.lat,lng:pin.lng});setCol(false);pinDone();say('Destino marcado')}
+  function pinOrig(){setOrig({lat:pin.lat,lng:pin.lng});pinDone();say('Salida marcada')}
   useEffect(function(){setRoute(null)},[dest,orig,pref]);
   function flyTo(lat,lng,z){var v=V.current,s={lat:v.lat,lng:v.lng,z:v.z},t0=performance.now();
     (function st(t){var k=Math.min(1,(t-t0)/700),e=k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2;v.lat=s.lat+(lat-s.lat)*e;v.lng=s.lng+(lng-s.lng)*e;v.z=s.z+(z-s.z)*e;req();if(k<1)requestAnimationFrame(st);else save()})(t0)}
@@ -257,7 +269,6 @@ function App(){
       .then(function(j){var r=solve(j.elements||[],m,d,PREFS[pref]);r.t0=performance.now();setRoute(r);setRouting(false);if(!r.ok)say(r.msg)})
       .catch(function(){setRouting(false);say('No pude bajar los cauces. Probá de nuevo en un rato.')});
   }
-  function setDestHere(){setDest({lat:V.current.lat,lng:V.current.lng});say('Destino marcado')}
   function goTo(m){V.current.lat=m.lat;V.current.lng=m.lng;V.current.z=Math.max(V.current.z,14);req();save()}
   // Copia de seguridad (Ajustes): exportar a un archivo .json e importarlo de vuelta
   var fileIn=useRef(null);
@@ -293,13 +304,13 @@ function App(){
 
   return html`<div id="app">
     <canvas ref=${cv}></canvas>
-    <div className="cross"></div>
     <div className="hud">${ES_TEST?html`<small style=${{background:'#d9480f',color:'#fff',fontWeight:700,borderRadius:6,padding:'1px 6px',alignSelf:'flex-start'}}>PRUEBA</small>`:null}<b>${spd} nd</b><small>${dst}</small><div className="scale" ref=${sc}></div><small ref=${scl}></small>${wx&&layers.wx?html`<small>Viento ${Math.round(wx.wind_speed_10m)} nd ${DIRS[Math.round(wx.wind_direction_10m/45)%8]} · ráf. ${Math.round(wx.wind_gusts_10m)}</small><small>${Math.round(wx.temperature_2m)} °C</small>`:null}${online?null:html`<small style=${{color:'var(--danger)',fontWeight:600}}>Sin señal</small>`}<small>© ${sat?'Esri':'OpenStreetMap'}</small></div>
     <div className="fabs">
       <button className="fab" aria-label="Acercar" onClick=${function(){step(1)}}>+</button>
       <button className="fab" aria-label="Alejar" onClick=${function(){step(-1)}}>−</button>
       <button className="fab" aria-label="Mi posición" onClick=${locate}>◎</button>
       <button className="fab" aria-label="Satélite" onClick=${toggleSat}>${sat?'🗺':'🛰'}</button>
+      <button className=${'fab'+(rec?' recon':'')} aria-label=${rec?'Detener recorrido':'Grabar recorrido'} onClick=${function(){recOn(!rec)}}>${rec?html`<i className="sq"></i>`:html`<i className="dot"></i>`}</button>
     </div>
     <div id="toast" className=${toast?'on':''}>${toast}</div>
     <button className="fab burger" aria-label="Menú" onClick=${function(){setMenu(true)}}>☰</button>
@@ -363,22 +374,21 @@ function App(){
           </div>`}
       </div>
     </div>
-    <div id="sheet" className=${col?'col':''} style=${{'--peek':(dest&&from)?'64px':'42px'}}>
-      <div id="handle" onPointerDown=${function(e){hy.current=e.clientY}} onPointerUp=${function(e){var dy=e.clientY-hy.current;if(dy>24)setCol(true);else if(dy<-24)setCol(false);else setCol(!col)}}><i></i>${col&&dest&&from?html`<span className="sumtx">${(rk/1.852).toFixed(1)} mn · ${fmtT(rk/1.852/cruise)}</span>`:null}</div>
-      <div className="row">
-        ${rec
-          ?html`<button className="btn rec" onClick=${function(){recOn(false)}}>Detener recorrido</button>`
-          :html`<button className="btn" onClick=${function(){recOn(true)}}>Grabar</button>`}
-        <button className="btn p" onClick=${addMark}>Marcar</button>
-        <button className="btn" onClick=${setDestHere}>Ir ahí</button>
-      </div>
-      ${dest?html`<div className="route">
+    ${pin?html`<div id="pincard">
+      <div className="row"><b style=${{flex:1}}>Nuevo punto</b><button className="clr" aria-label="Cancelar" onClick=${pinDone}>✕</button></div>
+      <div className="row"><input value=${name} placeholder="Nombre (muelle, arroyo…)" enterKeyHint="done"
+        onInput=${function(e){setName(e.target.value)}} onKeyDown=${function(e){if(e.key==='Enter')addMark()}} /></div>
+      <div className="row"><button className="btn p" onClick=${addMark}>Guardar</button><button className="btn" onClick=${pinDest}>Ir ahí</button>${dest?html`<button className="btn" onClick=${pinOrig}>Salir de acá</button>`:null}</div>
+    </div>`:null}
+    ${dest?html`<div id="sheet" className=${col?'col':''} style=${{'--peek':from?'64px':'42px'}}>
+      <div id="handle" onPointerDown=${function(e){hy.current=e.clientY}} onPointerUp=${function(e){var dy=e.clientY-hy.current;if(dy>24)setCol(true);else if(dy<-24)setCol(false);else setCol(!col)}}><i></i>${col&&from?html`<span className="sumtx">${(rk/1.852).toFixed(1)} mn · ${fmtT(rk/1.852/cruise)}</span>`:null}</div>
+      <div className="route">
         ${from?html`<div><b>${(rk/1.852).toFixed(1)} mn</b> · ${rk.toFixed(1)} km · ${route&&route.ok?'por agua':'en línea recta, rumbo '+Math.round(bearing(from,dest))+'°'}</div>
           <div>Llegada en <b>${fmtT(rk/1.852/cruise)}</b> a ${cruise} nd</div>`
-          :html`<div>Activá ◎ o marcá otro punto como origen</div>`}
+          :html`<div>Activá ◎ o mantené apretado el mapa para elegir la salida</div>`}
         <div className="rr"><small>Desde:</small>
           <button className=${'mini'+(!orig?' on':'')} onClick=${function(){setOrig(null)}}>Mi ubicación</button>
-          <button className=${'mini'+(orig?' on':'')} onClick=${function(){setOrig({lat:V.current.lat,lng:V.current.lng});say('Origen marcado en el centro del mapa')}}>${orig?'Mover origen aquí':'Otro punto'}</button></div>
+          <button className=${'mini'+(orig?' on':'')} onClick=${function(){if(!orig)say('Mantené apretado el mapa y tocá Salir de acá')}}>Otro punto</button></div>
         <button className="btn p" disabled=${routing} onClick=${calcRoute}>${routing?'Calculando…':'Ruta por agua'}</button>
         <div className="rr">
           <button className="mini" onClick=${function(){setCruise(Math.max(1,cruise-1))}}>−</button>
@@ -387,12 +397,8 @@ function App(){
           <button className="mini" onClick=${function(){setDest(null)}}>Quitar destino</button>
         </div>
         <small>${route?(route.ok?'Ruta sobre cauces de OpenStreetMap que prioriza ríos, luego canales y arroyos. No sabe si un arroyo está seco ni las alturas de puentes. No reemplaza las cartas oficiales.':route.msg+'. Se muestra la línea recta.'):'Línea recta. Tocá Ruta por agua para seguir los cauces.'}</small>
-      </div>`:null}
-      <div id="more">
-        <div className="row"><input value=${name} placeholder="Nombre del punto (muelle, arroyo…)" enterKeyHint="done"
-          onInput=${function(e){setName(e.target.value)}} onKeyDown=${function(e){if(e.key==='Enter')addMark()}} /></div>
       </div>
-    </div>
+    </div>`:null}
   </div>`;
 }
 ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));

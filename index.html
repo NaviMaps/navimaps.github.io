@@ -24,18 +24,14 @@
 html,body,#root{height:100%;margin:0}
 body{background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;overflow:hidden;overscroll-behavior:none;-webkit-user-select:none;user-select:none}
 #app{position:relative;height:100%}
-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;-webkit-touch-callout:none}
 input{flex:1;min-width:0;min-height:46px;padding:0 12px;border-radius:12px;border:1px solid var(--grid);background:var(--bg);color:var(--fg);font-size:16px;-webkit-user-select:text;user-select:text}
 .empty{color:var(--muted);font-size:14px;padding:6px 0}
 
 /* Vidrio esmerilado */
-.hud,.fab,#sheet,#menu,.sb,#sr{background:var(--glass);-webkit-backdrop-filter:blur(22px) saturate(180%);backdrop-filter:blur(22px) saturate(180%);border:1px solid rgba(255,255,255,.3)}
+.hud,.fab,#sheet,#pincard,#menu,.sb,#sr{background:var(--glass);-webkit-backdrop-filter:blur(22px) saturate(180%);backdrop-filter:blur(22px) saturate(180%);border:1px solid rgba(255,255,255,.3)}
 
 /* ---------- Mapa: mira, datos y botones flotantes ---------- */
-.cross{position:absolute;left:50%;top:50%;width:24px;height:24px;margin:-12px 0 0 -12px;pointer-events:none;opacity:.8}
-.cross:before,.cross:after{content:"";position:absolute;background:var(--accent)}
-.cross:before{left:11px;top:0;width:2px;height:24px}
-.cross:after{top:11px;left:0;height:2px;width:24px}
 .hud{position:absolute;left:10px;top:68px;border-radius:12px;padding:8px 12px;box-shadow:0 2px 8px rgba(0,0,0,.2);display:flex;flex-direction:column;gap:4px;min-width:96px}
 .hud b{font-size:20px;font-variant-numeric:tabular-nums}
 .hud small{color:var(--muted);font-size:12px}
@@ -43,6 +39,12 @@ input{flex:1;min-width:0;min-height:46px;padding:0 12px;border-radius:12px;borde
 .fabs{position:absolute;right:10px;top:68px;display:flex;flex-direction:column;gap:8px}
 .fab{width:48px;height:48px;border-radius:50%;color:var(--fg);font-size:22px;box-shadow:0 2px 8px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center}
 .fab:active{transform:scale(.94)}
+.fab .dot{width:18px;height:18px;border-radius:50%;background:var(--danger)}
+.fab .sq{width:16px;height:16px;border-radius:3px;background:#fff}
+.fab.recon{background:var(--danger);animation:latido 1.6s ease-in-out infinite}
+@keyframes latido{50%{box-shadow:0 0 0 8px rgba(229,72,77,.25)}}
+#pincard{position:absolute;left:10px;right:10px;bottom:calc(14px + env(safe-area-inset-bottom));border-radius:18px;padding:10px 12px 12px;box-shadow:0 4px 18px rgba(0,0,0,.3);display:flex;flex-direction:column;gap:10px;z-index:3;animation:sube .3s cubic-bezier(.2,.8,.2,1)}
+@keyframes sube{from{opacity:0;transform:translateY(20px)}}
 .burger{position:absolute;left:10px;top:10px}
 .compass{position:absolute;right:10px;top:10px}
 .compass span{display:flex}
@@ -65,7 +67,6 @@ input{flex:1;min-width:0;min-height:46px;padding:0 12px;border-radius:12px;borde
 #handle{min-height:34px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;touch-action:none;cursor:grab;flex:none}
 #handle i{width:40px;height:5px;border-radius:3px;background:var(--grid)}
 .sumtx{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
-#more{display:flex;flex-direction:column;gap:10px;min-height:0}
 .route{background:var(--bg);border-radius:12px;padding:8px 10px;display:flex;flex-direction:column;gap:4px;font-size:15px}
 .route small{color:var(--muted);font-size:12px}
 .rr{display:flex;align-items:center;gap:10px}
