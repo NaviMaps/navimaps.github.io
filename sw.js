@@ -1,7 +1,7 @@
 // Service worker de Mapa del Delta: guarda la app, los cauces y los mosaicos
 // que ya viste para que funcione sin señal.
-// Al cambiar index.html o cauces.json, subí el número de VERSION.
-var VERSION = 'v1';
+// Al cambiar cualquier archivo de la app (index.html, js/, cauces.json), subí el número de VERSION.
+var VERSION = 'v2';
 var APP = 'delta-app-' + VERSION;
 var TILES = 'delta-tiles';
 var MAX_TILES = 4000; // ~60-100 MB según la zona
@@ -9,6 +9,10 @@ var MAX_TILES = 4000; // ~60-100 MB según la zona
 var PRECACHE = [
   './',
   './index.html',
+  './js/app.js',
+  './js/geo.js',
+  './js/ruta.js',
+  './js/datos.js',
   './cauces.json',
   './manifest.webmanifest',
   './icon-192.png',
