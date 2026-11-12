@@ -1,8 +1,11 @@
 // Service worker de Mapa del Delta: guarda la app, los cauces y los mosaicos
 // que ya viste para que funcione sin señal.
 // Al cambiar cualquier archivo de la app (index.html, js/, cauces.json), subí el número de VERSION.
-var VERSION = 'v2';
-var APP = 'delta-app-' + VERSION;
+var VERSION = 'v3';
+// La versión real (/Maps-nautico/) y la de prueba (/Maps-nautico/test/) comparten sitio:
+// el nombre de la caché lleva la carpeta para que una no borre la de la otra.
+var SCOPE = new URL(self.registration.scope).pathname;
+var APP = 'delta-app-' + SCOPE + '-' + VERSION;
 var TILES = 'delta-tiles';
 var MAX_TILES = 4000; // ~60-100 MB según la zona
 
@@ -10,6 +13,7 @@ var PRECACHE = [
   './',
   './index.html',
   './js/app.js',
+  './js/entorno.js',
   './js/geo.js',
   './js/ruta.js',
   './js/datos.js',
@@ -33,7 +37,10 @@ self.addEventListener('install', function (e) {
 
 self.addEventListener('activate', function (e) {
   e.waitUntil(caches.keys().then(function (ks) {
-    return Promise.all(ks.filter(function (k) { return k.indexOf('delta-app-') === 0 && k !== APP; })
+    // Borra versiones viejas de esta misma carpeta y las cachés con el nombre anterior (delta-app-v1, v2)
+    return Promise.all(ks.filter(function (k) {
+      return k !== APP && (k.indexOf('delta-app-' + SCOPE + '-') === 0 || /^delta-app-v\d+$/.test(k));
+    })
       .map(function (k) { return caches.delete(k); }));
   }).then(function () { return self.clients.claim(); }));
 });
@@ -58,6 +65,8 @@ self.addEventListener('fetch', function (e) {
   var req = e.request;
   if (req.method !== 'GET') return; // Overpass usa POST: va directo a la red
   var u = new URL(req.url);
+  // La versión de prueba vive en una subcarpeta: la versión real no la toca ni la guarda
+  if (u.origin === self.location.origin && u.pathname.indexOf(SCOPE + 'test/') === 0) return;
 
   // Mosaicos del mapa: primero la caché, si no está, la red (y se guarda)
   if (isTile(u)) {

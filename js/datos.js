@@ -1,5 +1,6 @@
 // Datos de OpenStreetMap: consultas a Overpass con respaldo, cauces locales y resultados de búsqueda.
 import { dist } from './geo.js';
+import { PRE } from './entorno.js';
 
 // Categorías del buscador: palabras que las activan (re) y filtros de Overpass (f)
 export var CATS = [
@@ -45,12 +46,12 @@ function store(q, j) {
   try {
     var s = JSON.stringify(j);
     if (s.length > 300000) return;
-    var k = 'delta_c_' + hash(q);
-    var L = JSON.parse(localStorage.getItem('delta_cl') || '[]').filter(function (x) { return x !== k; });
+    var k = PRE + 'delta_c_' + hash(q);
+    var L = JSON.parse(localStorage.getItem(PRE + 'delta_cl') || '[]').filter(function (x) { return x !== k; });
     L.push(k);
     while (L.length > 10) localStorage.removeItem(L.shift());
     localStorage.setItem(k, s);
-    localStorage.setItem('delta_cl', JSON.stringify(L));
+    localStorage.setItem(PRE + 'delta_cl', JSON.stringify(L));
   } catch (e) {}
 }
 
@@ -59,7 +60,7 @@ function store(q, j) {
 export function ovp(q, onTry) {
   if (CACHE[q]) return Promise.resolve(CACHE[q]);
   try {
-    var c0 = localStorage.getItem('delta_c_' + hash(q));
+    var c0 = localStorage.getItem(PRE + 'delta_c_' + hash(q));
     if (c0) { CACHE[q] = JSON.parse(c0); return Promise.resolve(CACHE[q]); }
   } catch (e) {}
 

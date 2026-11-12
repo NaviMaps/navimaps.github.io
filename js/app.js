@@ -3,6 +3,7 @@
 import { DIRS, NICE, px, ll, dist, bearing, norm, flex, fmtT } from './geo.js';
 import { PREFS, solve } from './ruta.js';
 import { CATS, ovp, local, waterEls, parseRes, dTo } from './datos.js';
+import { PRE, ES_TEST } from './entorno.js';
 
 var useState = React.useState, useEffect = React.useEffect, useRef = React.useRef;
 var html = htm.bind(React.createElement);
@@ -32,7 +33,7 @@ function pl(ctx, sp, a, b, cum) {
 }
 
 function css(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
-function load() { try { return JSON.parse(localStorage.getItem('delta') || 'null') || {}; } catch (e) { return {}; } }
+function load() { try { return JSON.parse(localStorage.getItem(PRE+'delta') || 'null') || {}; } catch (e) { return {}; } }
 
 function App(){
   var sv=useRef(null);if(!sv.current)sv.current=load();
@@ -64,14 +65,14 @@ function App(){
   var _so=useState(false),sopen=_so[0],setSopen=_so[1];
   var _sb=useState('near'),sortBy=_sb[0],setSortBy=_sb[1];
   var _sg=useState(false),searching=_sg[0],setSearching=_sg[1];
-  var _hi=useState(function(){try{return JSON.parse(localStorage.getItem('delta_hist')||'[]')}catch(e){return []}}),hist=_hi[0],setHist=_hi[1];
+  var _hi=useState(function(){try{return JSON.parse(localStorage.getItem(PRE+'delta_hist')||'[]')}catch(e){return []}}),hist=_hi[0],setHist=_hi[1];
   var cmp=useRef(null),hy=useRef(0);
   var _co=useState(false),col=_co[0],setCol=_co[1];
-  var _pf=useState(function(){try{var x=parseInt(localStorage.getItem('delta_pref'),10);return x>=0&&x<=2?x:2}catch(e){return 2}}),pref=_pf[0],setPref=_pf[1];
+  var _pf=useState(function(){try{var x=parseInt(localStorage.getItem(PRE+'delta_pref'),10);return x>=0&&x<=2?x:2}catch(e){return 2}}),pref=_pf[0],setPref=_pf[1];
   var _lc=useState(local()?local().length:0),lc=_lc[0],setLc=_lc[1];
   useEffect(function(){function f(){setLc(local()?local().length:0)}window.addEventListener('delta-local',f);f();return function(){window.removeEventListener('delta-local',f)}},[]);
-  function setPrefP(i){setPref(i);try{localStorage.setItem('delta_pref',String(i))}catch(e){}}
-  var _th=useState(function(){try{return localStorage.getItem('delta_theme')||'auto'}catch(e){return 'auto'}}),theme=_th[0],setTheme=_th[1];
+  function setPrefP(i){setPref(i);try{localStorage.setItem(PRE+'delta_pref',String(i))}catch(e){}}
+  var _th=useState(function(){try{return localStorage.getItem(PRE+'delta_theme')||'auto'}catch(e){return 'auto'}}),theme=_th[0],setTheme=_th[1];
   var _on=useState(navigator.onLine!==false),online=_on[0],setOnline=_on[1];
   useEffect(function(){
     function on(){setOnline(true);tiles.current={};req();say('Volvió la señal')}
@@ -87,7 +88,7 @@ function App(){
   // normalmente espera 0,4 s; mientras grabás, escribe como mucho cada 15 s (el recorrido puede ser largo).
   // saveNow() escribe ya: al detener la grabación y cuando la app pasa a segundo plano.
   function saveNow(){clearTimeout(saveT.current);saveT.current=0;
-    try{localStorage.setItem('delta',JSON.stringify({marks:D.current.marks,track:trk.current,layers:D.current.layers,
+    try{localStorage.setItem(PRE+'delta',JSON.stringify({marks:D.current.marks,track:trk.current,layers:D.current.layers,
       lat:V.current.lat,lng:V.current.lng,z:V.current.z,cruise:D.current.cruise,sat:satR.current}))}catch(e){}}
   function save(){if(!saveT.current)saveT.current=setTimeout(saveNow,recR.current?15000:400)}
   function req(){if(!raf.current)raf.current=requestAnimationFrame(function(){raf.current=0;if(drawRef.current)drawRef.current()})}
@@ -219,7 +220,7 @@ function App(){
     flyTo((a+b)/2,(c+d)/2,Math.min(z,17))}
   function northUp(){var v=V.current,r0=((v.r+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI,t0=performance.now();
     (function st(t){var k=Math.min(1,(t-t0)/350),e=1-Math.pow(1-k,3);v.r=r0*(1-e);req();if(k<1)requestAnimationFrame(st)})(t0)}
-  function addHist(t){var h=[t].concat(hist.filter(function(x){return x!==t})).slice(0,15);setHist(h);try{localStorage.setItem('delta_hist',JSON.stringify(h))}catch(e){}}
+  function addHist(t){var h=[t].concat(hist.filter(function(x){return x!==t})).slice(0,15);setHist(h);try{localStorage.setItem(PRE+'delta_hist',JSON.stringify(h))}catch(e){}}
   function clearSearch(){setQ('');setRes([]);setSel(-1);setSopen(false)}
   function pick(r){setSel(r.i);setSopen(false);if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();
     if(r.lines){var pts=[];r.lines.forEach(function(l){pts=pts.concat(l)});fitPts(pts)}else flyTo(r.lat,r.lng,16)}
@@ -240,7 +241,7 @@ function App(){
      .catch(function(){setSearching(false);say('No pude buscar ahora. Probá de nuevo en un rato.')});
   }
   useEffect(function(){var r=document.documentElement;if(theme==='auto')r.removeAttribute('data-theme');else r.setAttribute('data-theme',theme);
-    try{localStorage.setItem('delta_theme',theme)}catch(e){}req()},[theme]);
+    try{localStorage.setItem(PRE+'delta_theme',theme)}catch(e){}req()},[theme]);
   function setLayer(k){var n=Object.assign({},layers);n[k]=!n[k];setLayers(n)}
   function saveEd(i){var nm=edv.trim();if(nm)setMarks(marks.map(function(m,j){return j===i?{name:nm,lat:m.lat,lng:m.lng}:m}));setEd(-1)}
   function sw(on,fn){return html`<button className=${'sw'+(on?' on':'')} onClick=${fn} aria-label="Activar o desactivar"><i></i></button>`}
@@ -279,7 +280,7 @@ function App(){
   return html`<div id="app">
     <canvas ref=${cv}></canvas>
     <div className="cross"></div>
-    <div className="hud"><b>${spd} nd</b><small>${dst}</small><div className="scale" ref=${sc}></div><small ref=${scl}></small>${wx&&layers.wx?html`<small>Viento ${Math.round(wx.wind_speed_10m)} nd ${DIRS[Math.round(wx.wind_direction_10m/45)%8]} · ráf. ${Math.round(wx.wind_gusts_10m)}</small><small>${Math.round(wx.temperature_2m)} °C</small>`:null}${online?null:html`<small style=${{color:'var(--danger)',fontWeight:600}}>Sin señal</small>`}<small>© ${sat?'Esri':'OpenStreetMap'}</small></div>
+    <div className="hud">${ES_TEST?html`<small style=${{background:'#d9480f',color:'#fff',fontWeight:700,borderRadius:6,padding:'1px 6px',alignSelf:'flex-start'}}>PRUEBA</small>`:null}<b>${spd} nd</b><small>${dst}</small><div className="scale" ref=${sc}></div><small ref=${scl}></small>${wx&&layers.wx?html`<small>Viento ${Math.round(wx.wind_speed_10m)} nd ${DIRS[Math.round(wx.wind_direction_10m/45)%8]} · ráf. ${Math.round(wx.wind_gusts_10m)}</small><small>${Math.round(wx.temperature_2m)} °C</small>`:null}${online?null:html`<small style=${{color:'var(--danger)',fontWeight:600}}>Sin señal</small>`}<small>© ${sat?'Esri':'OpenStreetMap'}</small></div>
     <div className="fabs">
       <button className="fab" aria-label="Acercar" onClick=${function(){step(1)}}>+</button>
       <button className="fab" aria-label="Alejar" onClick=${function(){step(-1)}}>−</button>
@@ -330,7 +331,7 @@ function App(){
             <div className="lr"><span>Vista satelital</span>${sw(sat,toggleSat)}</div>
           </div>`
         :tab==='historial'?html`<div>${hist.length?hist.map(function(h){return html`<div className="mi" key=${h}><span onClick=${function(){setMenu(false);runSearch(h)}}>🔍 ${h}</span></div>`}):html`<div className="empty">Todavía no hiciste búsquedas.</div>`}
-            ${hist.length?html`<div className="lr"><span>Borrar historial</span><button className="mini" style=${{color:'var(--danger)'}} onClick=${function(){setHist([]);try{localStorage.removeItem('delta_hist')}catch(e){}}}>Borrar</button></div>`:null}</div>`
+            ${hist.length?html`<div className="lr"><span>Borrar historial</span><button className="mini" style=${{color:'var(--danger)'}} onClick=${function(){setHist([]);try{localStorage.removeItem(PRE+'delta_hist')}catch(e){}}}>Borrar</button></div>`:null}</div>`
         :html`<div>
             <div className="lr"><span>Tema</span><div className="seg">${[['auto','Auto'],['light','Claro'],['dark','Oscuro']].map(function(t){
               return html`<button key=${t[0]} className=${'tab'+(theme===t[0]?' on':'')} style=${{padding:'0 10px'}} onClick=${function(){setTheme(t[0])}}>${t[1]}</button>`})}</div></div>

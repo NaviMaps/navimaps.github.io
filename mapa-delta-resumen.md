@@ -84,6 +84,17 @@ Link: https://iangiribaldi.github.io/Maps-nautico/
 
 Este resumen (`mapa-delta-resumen.md`) también está en el repositorio, para retomar el trabajo desde cualquier computadora.
 
+## Ramas: prueba y versión real
+
+| Rama | Dirección | Para qué |
+|---|---|---|
+| `main` | https://iangiribaldi.github.io/Maps-nautico/ | La versión que se usa de verdad |
+| `test` | https://iangiribaldi.github.io/Maps-nautico/test/ | Versión de prueba (cartel naranja "PRUEBA", se instala como "Delta TEST") |
+
+- La automatización `.github/workflows/publicar.yml` publica las dos cada vez que se sube algo a cualquiera de ellas (GitHub Pages está configurado como "GitHub Actions").
+- **Datos separados:** la versión de prueba guarda todo con `test_` adelante (`js/entorno.js`) y su caché lleva su carpeta en el nombre (`sw.js`). Un error en la prueba no toca los puntos ni recorridos reales. Solo comparten los mosaicos del mapa.
+- **Flujo:** los cambios van primero a `test` → se prueban en el iPhone o en el agua → si están aprobados, se pasa `test` a `main` (`git checkout main`, `git merge test`, `git push`).
+
 ## Cómo actualizar la app
 
 1. **Siempre** subir el número de `VERSION` en `sw.js` (`v2` → `v3`…) cuando cambia `index.html`, algo de `js/` o `cauces.json`. Si no, los celulares siguen usando la copia guardada.
