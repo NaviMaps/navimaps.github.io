@@ -1,4 +1,4 @@
-# Mapa del Delta — Resumen del proyecto
+# NaviMaps (Mapa del Delta) — Resumen del proyecto
 
 App web tipo "Google Maps / Wavve" para navegar los ríos y arroyos del Delta del Paraná (Buenos Aires). Se publica como página estática en GitHub Pages y se usa desde el iPhone (se puede agregar a la pantalla de inicio desde Safari).
 
@@ -6,7 +6,7 @@ App web tipo "Google Maps / Wavve" para navegar los ríos y arroyos del Delta de
 
 1. **Idea inicial:** app para iPhone. Evaluamos Swift nativo (requiere Mac, Xcode y cuenta de desarrollador de USD 99/año) y se decidió empezar con una **app web**, más simple y sin esas barreras.
 2. **Prototipo v1:** HTML + JavaScript puro, mapa dibujado a mano sobre `<canvas>`.
-3. **Publicación:** repositorio `Maps-nautico` en GitHub, con GitHub Pages. Aprendimos que el archivo tiene que llamarse exactamente `index.html` (Windows había creado `index.html.html`).
+3. **Publicación:** repositorio `NaviMaps/navimaps.github.io` en GitHub, con GitHub Pages. Aprendimos que el archivo tiene que llamarse exactamente `index.html` (Windows había creado `index.html.html`).
 4. **Pulido para celular:** pantalla completa, zoom con pellizco, botones grandes, panel inferior.
 5. **Migración a React** en un solo archivo, sin compilar (React por CDN + htm), en lugar de React + Vite.
 6. **Funciones tipo Wavve:** satélite, clima, destino, ruta por agua.
@@ -80,7 +80,7 @@ App web tipo "Google Maps / Wavve" para navegar los ríos y arroyos del Delta de
 | `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | Íconos de la app |
 | `mapa-delta.html` | Primer prototipo (ya no se usa) |
 
-Link: https://iangiribaldi.github.io/Maps-nautico/
+Link: https://navimaps.github.io/
 
 Este resumen (`mapa-delta-resumen.md`) también está en el repositorio, para retomar el trabajo desde cualquier computadora.
 
@@ -88,8 +88,8 @@ Este resumen (`mapa-delta-resumen.md`) también está en el repositorio, para re
 
 | Rama | Dirección | Para qué |
 |---|---|---|
-| `main` | https://iangiribaldi.github.io/Maps-nautico/ | La versión que se usa de verdad |
-| `test` | https://iangiribaldi.github.io/Maps-nautico/test/ | Versión de prueba (cartel naranja "PRUEBA", se instala como "Delta TEST") |
+| `main` | https://navimaps.github.io/ | La versión que se usa de verdad |
+| `test` | https://navimaps.github.io/test/ | Versión de prueba (cartel naranja "PRUEBA", se instala como "Delta TEST") |
 
 - La automatización `.github/workflows/publicar.yml` publica las dos cada vez que se sube algo a cualquiera de ellas (GitHub Pages está configurado como "GitHub Actions").
 - **Datos separados:** la versión de prueba guarda todo con `test_` adelante (`js/entorno.js`) y su caché lleva su carpeta en el nombre (`sw.js`). Un error en la prueba no toca los puntos ni recorridos reales. Solo comparten los mosaicos del mapa.
@@ -106,7 +106,7 @@ Este resumen (`mapa-delta-resumen.md`) también está en el repositorio, para re
 
 1. Instalar Git y GitHub CLI. En Windows: `winget install --id Git.Git -e` y `winget install --id GitHub.cli -e` (en Mac: `brew install git gh`).
 2. Iniciar sesión: `gh auth login --web` (aceptar "Authenticate Git", pegar el código en el navegador y autorizar).
-3. Bajar el proyecto: `gh repo clone iangiribaldi/Maps-nautico` y trabajar dentro de esa carpeta.
+3. Bajar el proyecto: `gh repo clone NaviMaps/navimaps.github.io` y trabajar dentro de esa carpeta.
 4. Configurar el autor de los cambios (una vez por computadora, dentro de la carpeta): `git config user.name "iangiribaldi"` y como correo la dirección privada `<id>+iangiribaldi@users.noreply.github.com` (el número sale de `gh api user --jq .id`).
 5. Para probar en la computadora hace falta un servidor local, porque los módulos y el service worker no funcionan abriendo el archivo con doble clic. Por ejemplo `npx serve` (Node) o `python -m http.server 8765`, y abrir `http://localhost:8765`.
 6. Antes de empezar, `git pull` para traer lo último; al terminar, subir `VERSION`, `git commit` y `git push`.

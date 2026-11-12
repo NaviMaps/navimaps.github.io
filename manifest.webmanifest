@@ -1,6 +1,6 @@
 {
-  "name": "Mapa del Delta",
-  "short_name": "Delta",
+  "name": "NaviMaps",
+  "short_name": "NaviMaps",
   "lang": "es",
   "start_url": "./",
   "scope": "./",

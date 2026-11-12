@@ -1,6 +1,6 @@
 # Publica la app en GitHub Pages cada vez que se sube algo a main o a test:
-#   rama main → https://iangiribaldi.github.io/Maps-nautico/
-#   rama test → https://iangiribaldi.github.io/Maps-nautico/test/
+#   rama main → https://navimaps.github.io/
+#   rama test → https://navimaps.github.io/test/
 name: Publicar
 
 on:
