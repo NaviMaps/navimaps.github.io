@@ -6,7 +6,7 @@ App web tipo "Google Maps / Wavve" para navegar los ríos y arroyos del Delta de
 
 1. **Idea inicial:** app para iPhone. Evaluamos Swift nativo (requiere Mac, Xcode y cuenta de desarrollador de USD 99/año) y se decidió empezar con una **app web**, más simple y sin esas barreras.
 2. **Prototipo v1:** HTML + JavaScript puro, mapa dibujado a mano sobre `<canvas>`.
-3. **Publicación:** repositorio `NaviMaps/navimaps.github.io` en GitHub, con GitHub Pages. Aprendimos que el archivo tiene que llamarse exactamente `index.html` (Windows había creado `index.html.html`).
+3. **Publicación:** repositorio `iangiribaldi/Maps-nautico` en GitHub (hoy `NaviMaps/navimaps.github.io`), con GitHub Pages. Aprendimos que el archivo tiene que llamarse exactamente `index.html` (Windows había creado `index.html.html`).
 4. **Pulido para celular:** pantalla completa, zoom con pellizco, botones grandes, panel inferior.
 5. **Migración a React** en un solo archivo, sin compilar (React por CDN + htm), en lugar de React + Vite.
 6. **Funciones tipo Wavve:** satélite, clima, destino, ruta por agua.
@@ -16,6 +16,10 @@ App web tipo "Google Maps / Wavve" para navegar los ríos y arroyos del Delta de
 10. **Modo sin conexión (v1, 12/11/2026):** service worker, manifiesto e íconos. La app, los cauces y los mosaicos ya vistos funcionan sin señal.
 11. **Arreglos y módulos (v2, 12/11/2026):** batería (destello que se detiene, canvas a 2x), recorrido con filtro de 10 m y guardado espaciado, se recuerdan crucero y satélite, límite de mosaicos en memoria, CSS ordenado y código separado en `js/`.
 12. **Git y GitHub CLI:** desde la v2 los cambios se suben con `git push` en lugar de subirlos a mano por la web.
+13. **Rama de prueba (v3, 12/11/2026):** rama `test` publicada en `/test/` con una automatización de GitHub Actions, datos y caché separados de la versión real, y cartel "PRUEBA".
+14. **Mudanza a NaviMaps (v4, 12/11/2026):** se creó la organización gratuita **NaviMaps** en GitHub, el repositorio pasó a `NaviMaps/navimaps.github.io` y la app se llama **NaviMaps**. Dirección nueva: https://navimaps.github.io/. La vieja (`iangiribaldi.github.io/Maps-nautico/`) ya no existe.
+
+**Estado actual:** versión `v4` en `main` y en `test`. La carpeta local trabaja en la rama `test`.
 
 ## Funciones actuales
 
@@ -78,7 +82,11 @@ App web tipo "Google Maps / Wavve" para navegar los ríos y arroyos del Delta de
 | `sw.js` | Service worker: guarda la app, los cauces y los mosaicos vistos para usarla sin señal |
 | `manifest.webmanifest` | Nombre, colores e íconos para instalarla en la pantalla de inicio |
 | `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | Íconos de la app |
-| `mapa-delta.html` | Primer prototipo (ya no se usa) |
+| `js/entorno.js` | Detecta si es la versión de prueba (`/test/`): separa sus datos y muestra el cartel PRUEBA |
+| `.github/workflows/publicar.yml` | Automatización que publica `main` en la raíz y `test` en `/test/` |
+| `mapa-delta-resumen.md` | Este resumen |
+
+(El primer prototipo, `mapa-delta.html`, ya no está en el repositorio.)
 
 Link: https://navimaps.github.io/
 
@@ -89,11 +97,12 @@ Este resumen (`mapa-delta-resumen.md`) también está en el repositorio, para re
 | Rama | Dirección | Para qué |
 |---|---|---|
 | `main` | https://navimaps.github.io/ | La versión que se usa de verdad |
-| `test` | https://navimaps.github.io/test/ | Versión de prueba (cartel naranja "PRUEBA", se instala como "Delta TEST") |
+| `test` | https://navimaps.github.io/test/ | Versión de prueba (cartel naranja "PRUEBA", se instala como "NaviMaps TEST") |
 
 - La automatización `.github/workflows/publicar.yml` publica las dos cada vez que se sube algo a cualquiera de ellas (GitHub Pages está configurado como "GitHub Actions").
 - **Datos separados:** la versión de prueba guarda todo con `test_` adelante (`js/entorno.js`) y su caché lleva su carpeta en el nombre (`sw.js`). Un error en la prueba no toca los puntos ni recorridos reales. Solo comparten los mosaicos del mapa.
-- **Flujo:** los cambios van primero a `test` → se prueban en el iPhone o en el agua → si están aprobados, se pasa `test` a `main` (`git checkout main`, `git merge test`, `git push`).
+- **Flujo:** los cambios van primero a `test` → se prueban en el iPhone o en el agua → si están aprobados, se pasa `test` a `main` (`git checkout main`, `git merge test`, `git push`, y `git checkout test` para seguir trabajando en prueba).
+- Si se agrega otra rama además de `main` y `test`, hay que habilitarla en el repositorio: Settings > Environments > github-pages.
 
 ## Cómo actualizar la app
 
@@ -117,6 +126,7 @@ Este resumen (`mapa-delta-resumen.md`) también está en el repositorio, para re
 - La ruta depende de lo que esté mapeado en OpenStreetMap. No sabe si un arroyo está seco, ni conoce profundidades, bajíos ni alturas de puentes. **No reemplaza las cartas oficiales.**
 - En iPhone, el GPS deja de grabar si se apaga la pantalla o se cambia de app.
 - El almacenamiento del navegador puede borrarse si la app no está agregada a la pantalla de inicio (Safari borra datos de sitios sin visitar en 7 días). Todavía no hay exportar/importar.
+- **Mudanza a navimaps.github.io:** Safari guarda los datos por dirección, así que la app nueva arrancó vacía. Los puntos y recorridos de la dirección vieja siguen en el iPhone, pero solo se pueden recuperar haciendo exportar/importar y volviendo a publicar la dirección vieja un rato.
 - Sin conexión solo están los mosaicos que ya se vieron con señal; no hay descarga de zonas enteras (el servidor de OpenStreetMap no lo permite).
 - Los mosaicos del servidor público de OpenStreetMap son para uso liviano.
 - Los resultados de lugares dependen de la calidad de los datos de OSM en la zona.
