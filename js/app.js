@@ -251,7 +251,8 @@ function App(){
   function northUp(){var v=V.current,r0=((v.r+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI,t0=performance.now();
     (function st(t){var k=Math.min(1,(t-t0)/350),e=1-Math.pow(1-k,3);v.r=r0*(1-e);req();if(k<1)requestAnimationFrame(st)})(t0)}
   function addHist(t){var h=[t].concat(hist.filter(function(x){return x!==t})).slice(0,15);setHist(h);try{localStorage.setItem(PRE+'delta_hist',JSON.stringify(h))}catch(e){}}
-  function clearSearch(){setQ('');setRes([]);setSel(-1);setSopen(false)}
+  function stopSearch(){sq.current++;setSearching(false)}
+  function clearSearch(){stopSearch();setQ('');setRes([]);setSel(-1);setSopen(false)}
   function pick(r){setSel(r.i);setSopen(false);if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();
     if(r.lines){var pts=[];r.lines.forEach(function(l){pts=pts.concat(l)});fitPts(pts)}else flyTo(r.lat,r.lng,16)}
   // Búsqueda unificada: tus puntos guardados + cauces (archivo local, al instante) + lugares (servidor).
@@ -276,7 +277,9 @@ function App(){
     else{var bb=[la-0.7,lo-0.7,la+0.7,lo+0.7].map(function(x){return x.toFixed(4)}).join(','),rx=flex(t);
       // Con cauces.json cargado, los cauces ya salieron del archivo: al servidor solo se le piden lugares
       body='[out:json][timeout:25];('+(local()?'':'way["waterway"~"^(river|canal|stream|tidal_channel)$"]["name"~"'+rx+'",i]('+bb+');')+['amenity','leisure','tourism'].map(function(k){return 'nwr["name"~"'+rx+'",i]["'+k+'"]('+bb+');'}).join('')+');out geom;'}
-    ovp(body,function(i){if(i>0&&!first.length)say('El servidor tarda, probando otro…')}).then(function(j){if(my!==sq.current)return;
+    var srv=ovp(body,function(i){if(i>0&&!first.length)say('El servidor tarda, probando otro…')});
+    if(first.length)srv=Promise.race([srv,new Promise(function(ok){setTimeout(function(){ok({elements:[]})},8000)})]);
+    srv.then(function(j){if(my!==sq.current)return;
       var extra=parseRes(j.elements||[]),r=num(first.concat(extra));setRes(r);setSearching(false);
       if(first.length)return;
       if(!r.length){say('No encontré resultados');return}
@@ -351,7 +354,7 @@ function App(){
     <button className="fab burger" aria-label="Menú" onClick=${function(){setMenu(true)}}>☰</button>
     <button className="fab compass" aria-label="Norte arriba" onClick=${northUp}><span ref=${cmp}><svg viewBox="0 0 24 24" width="30" height="30"><path d="M12 2L17 13H7Z" fill="#e5484d"/><path d="M12 22L7 13H17Z" fill="currentColor" opacity=".45"/></svg></span></button>
     <div className="sb"><span>🔍</span><input value=${q} placeholder="Buscar lugares, ríos, arroyos…" enterKeyHint="search"
-      onFocus=${function(){setSopen(true)}} onInput=${function(e){setQ(e.target.value);if(res.length){sq.current++;setRes([]);setSel(-1);setSearching(false)}}}
+      onFocus=${function(){setSopen(true)}} onInput=${function(e){setQ(e.target.value);if(res.length||searching){stopSearch();setRes([]);setSel(-1)}}}
       onKeyDown=${function(e){if(e.key==='Enter'){runSearch();e.target.blur()}}} />
       ${q?html`<button className="clr" aria-label="Limpiar" onClick=${clearSearch}>✕</button>`:null}</div>
     <div id="sr" className=${sopen?'on':''}>
