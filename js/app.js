@@ -4,6 +4,7 @@ import { DIRS, NICE, px, ll, dist, bearing, norm, flex, fmtT } from './geo.js';
 import { PREFS, solve } from './ruta.js';
 import { CATS, ovp, local, waterEls, parseRes, dTo } from './datos.js';
 import { PRE, ES_TEST } from './entorno.js';
+import { exportar, leer, unirPuntos } from './respaldo.js';
 
 var useState = React.useState, useEffect = React.useEffect, useRef = React.useRef;
 var html = htm.bind(React.createElement);
@@ -258,6 +259,19 @@ function App(){
   }
   function setDestHere(){setDest({lat:V.current.lat,lng:V.current.lng});say('Destino marcado')}
   function goTo(m){V.current.lat=m.lat;V.current.lng=m.lng;V.current.z=Math.max(V.current.z,14);req();save()}
+  // Copia de seguridad (Ajustes): exportar a un archivo .json e importarlo de vuelta
+  var fileIn=useRef(null);
+  function doExport(){if(!marks.length&&!track.length){say('No hay puntos ni recorrido para exportar');return}
+    exportar(marks,trk.current).then(function(r){if(r==='ok')say('Respaldo listo')}).catch(function(){say('No pude exportar')})}
+  function doImport(e){var f=e.target.files&&e.target.files[0];e.target.value='';if(!f)return;
+    leer(f).then(function(d){
+      var antes=marks.length,nm=unirPuntos(marks,d.marks),sum=nm.length-antes,tr=false;
+      if(d.track.length>1&&!recR.current&&(!trk.current.length||confirm('El respaldo trae un recorrido de '+d.track.length+' puntos. ¿Reemplazar el recorrido actual?'))){
+        var k=0;for(var i=1;i<d.track.length;i++)k+=dist(d.track[i-1],d.track[i]);
+        trk.current=d.track;kmR.current=k;setTrack(d.track);setKm(k);tr=true}
+      setMarks(nm);setTimeout(saveNow,0);
+      say(sum||tr?('Importado: '+sum+' punto'+(sum===1?'':'s')+(tr?' y recorrido':'')):'No había nada nuevo para importar')
+    }).catch(function(er){say(er.message||'No pude leer el archivo')})}
   function del(i){setMarks(marks.filter(function(_,j){return j!==i}))}
   function step(d){zoomAt(cv.current.clientWidth/2,cv.current.clientHeight/2,Math.round(V.current.z)+d);save()}
 
@@ -341,6 +355,10 @@ function App(){
             <div className="lr" style=${{flexWrap:'wrap',padding:'8px 0'}}><span>Prioridad de cauces</span><div className="seg" style=${{width:'100%'}}>${PREFS.map(function(p,i){
               return html`<button key=${i} className=${'tab'+(pref===i?' on':'')} style=${{padding:'0 6px'}} onClick=${function(){setPrefP(i)}}>${p.n}</button>`})}</div></div>
             <div className="lr"><span>Cauces guardados</span><small style=${{color:'var(--muted)'}}>${lc?lc.toLocaleString('es-AR')+' tramos ✓':'no cargados'}</small></div>
+            <div className="lr"><span>Copia de seguridad<br/><small style=${{color:'var(--muted)'}}>${marks.length} puntos · ${track.length>1?'con recorrido':'sin recorrido'}</small></span><div className="seg">
+              <button className="mini" onClick=${doExport}>Exportar</button>
+              <button className="mini" onClick=${function(){if(fileIn.current)fileIn.current.click()}}>Importar</button></div>
+              <input ref=${fileIn} type="file" accept=".json,application/json" style=${{display:'none'}} onChange=${doImport} /></div>
             <div className="lr"><span>Borrar recorrido grabado</span><button className="mini" style=${{color:'var(--danger)'}} onClick=${function(){trk.current=[];kmR.current=0;setTrack([]);setKm(0);say('Recorrido borrado')}}>Borrar</button></div>
           </div>`}
       </div>

@@ -18,8 +18,9 @@ App web tipo "Google Maps / Wavve" para navegar los ríos y arroyos del Delta de
 12. **Git y GitHub CLI:** desde la v2 los cambios se suben con `git push` en lugar de subirlos a mano por la web.
 13. **Rama de prueba (v3, 12/11/2026):** rama `test` publicada en `/test/` con una automatización de GitHub Actions, datos y caché separados de la versión real, y cartel "PRUEBA".
 14. **Mudanza a NaviMaps (v4, 12/11/2026):** se creó la organización gratuita **NaviMaps** en GitHub, el repositorio pasó a `NaviMaps/navimaps.github.io` y la app se llama **NaviMaps**. Dirección nueva: https://navimaps.github.io/. La vieja (`iangiribaldi.github.io/Maps-nautico/`) ya no existe.
+15. **Copia de seguridad (v5, 12/11/2026, en `test`):** Ajustes > Copia de seguridad, con botones *Exportar* (arma un `.json` con los puntos y el recorrido; en el iPhone abre Compartir para guardarlo en Archivos, WhatsApp o Mail) e *Importar* (suma los puntos sin repetir y pregunta antes de reemplazar el recorrido). Código en `js/respaldo.js`.
 
-**Estado actual:** versión `v4` en `main` y en `test`. La carpeta local trabaja en la rama `test`.
+**Estado actual:** versión `v5` en `test` (copia de seguridad), `v4` en `main`. La carpeta local trabaja en la rama `test`.
 
 ## Funciones actuales
 
@@ -82,6 +83,7 @@ App web tipo "Google Maps / Wavve" para navegar los ríos y arroyos del Delta de
 | `sw.js` | Service worker: guarda la app, los cauces y los mosaicos vistos para usarla sin señal |
 | `manifest.webmanifest` | Nombre, colores e íconos para instalarla en la pantalla de inicio |
 | `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | Íconos de la app |
+| `js/respaldo.js` | Exportar e importar los puntos y el recorrido (copia de seguridad en `.json`) |
 | `js/entorno.js` | Detecta si es la versión de prueba (`/test/`): separa sus datos y muestra el cartel PRUEBA |
 | `.github/workflows/publicar.yml` | Automatización que publica `main` en la raíz y `test` en `/test/` |
 | `mapa-delta-resumen.md` | Este resumen |
@@ -125,7 +127,7 @@ Este resumen (`mapa-delta-resumen.md`) también está en el repositorio, para re
 
 - La ruta depende de lo que esté mapeado en OpenStreetMap. No sabe si un arroyo está seco, ni conoce profundidades, bajíos ni alturas de puentes. **No reemplaza las cartas oficiales.**
 - En iPhone, el GPS deja de grabar si se apaga la pantalla o se cambia de app.
-- El almacenamiento del navegador puede borrarse si la app no está agregada a la pantalla de inicio (Safari borra datos de sitios sin visitar en 7 días). Todavía no hay exportar/importar.
+- El almacenamiento del navegador puede borrarse si la app no está agregada a la pantalla de inicio (Safari borra datos de sitios sin visitar en 7 días). Por eso conviene exportar una copia de seguridad cada tanto (Ajustes > Copia de seguridad).
 - **Mudanza a navimaps.github.io:** Safari guarda los datos por dirección, así que la app nueva arrancó vacía. Los puntos y recorridos de la dirección vieja siguen en el iPhone, pero solo se pueden recuperar haciendo exportar/importar y volviendo a publicar la dirección vieja un rato.
 - Sin conexión solo están los mosaicos que ya se vieron con señal; no hay descarga de zonas enteras (el servidor de OpenStreetMap no lo permite).
 - Los mosaicos del servidor público de OpenStreetMap son para uso liviano.
@@ -135,7 +137,8 @@ Este resumen (`mapa-delta-resumen.md`) también está en el repositorio, para re
 ## Próximos pasos posibles
 
 - **Altura del río y mareas** (datos del INA o SIHN, a verificar qué publican).
-- **Exportar e importar** los puntos y recorridos (prioridad: protege los datos guardados).
+- Exportar el recorrido también en **GPX** para abrirlo en otras apps náuticas.
+- Recuperar los datos de la dirección vieja: volver a publicar un rato `iangiribaldi.github.io/Maps-nautico/` con la v5, exportar desde ahí e importar en NaviMaps.
 - Ordenar `js/app.js` en partes más chicas (mapa, gestos, panel, menú) con nombres de variables legibles.
 - Probar **Preact** en lugar de React (mismo código con htm, unos 40 KB menos).
 - **Base colaborativa** de muelles, bajíos y canales a partir de recorridos grabados.
