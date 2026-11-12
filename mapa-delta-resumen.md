@@ -21,8 +21,9 @@ App web tipo "Google Maps / Wavve" para navegar los ríos y arroyos del Delta de
 15. **Copia de seguridad (v5, 12/11/2026, en `test`):** Ajustes > Copia de seguridad, con botones *Exportar* (arma un `.json` con los puntos y el recorrido; en el iPhone abre Compartir para guardarlo en Archivos, WhatsApp o Mail) e *Importar* (suma los puntos sin repetir y pregunta antes de reemplazar el recorrido). Código en `js/respaldo.js`.
 16. **Pines con el dedo (v6, 12/11/2026, en `test`):** se sacó la barra de abajo (Grabar / Marcar / Ir ahí y el campo de nombre) y la mira del centro. Ahora se **mantiene apretado el mapa** medio segundo: aparece un pin rojo y una tarjeta que pide el nombre, con *Guardar*, *Ir ahí* y (si hay destino) *Salir de acá*. **Grabar** pasó a un botón redondo en la columna derecha (rojo con latido mientras graba). El panel de abajo solo aparece cuando hay un destino, con los datos de la ruta.
 17. **Tus puntos y "Cómo llegar" (v7, 12/11/2026, en `test`):** el buscador muestra primero los **puntos guardados** que coinciden con lo escrito (sin tildes, mientras escribís; con el buscador vacío, los 5 más cercanos). **Tocar un punto guardado** (en el mapa o en el buscador) abre una tarjeta como la de Google Maps con el nombre, la distancia y **Cómo llegar**, que marca el destino y **calcula sola la ruta por agua** (si no sabe dónde estás, primero busca tu posición). Al terminar, el mapa encuadra toda la ruta por encima del panel. Los ➤ de resultados y de la lista de puntos hacen lo mismo.
+18. **Buscador unificado (v8, 12/11/2026, en `test`):** una sola búsqueda junta **tus puntos guardados**, los **cauces** (de `cauces.json`, al instante) y los **lugares** (Overpass, llegan después: "buscando más…"). Antes, si el nombre coincidía con un cauce, solo mostraba cauces. Si coincide un punto guardado, el mapa va directo a su pin y abre su tarjeta. Con el buscador vacío aparecen primero los **Recientes** (historial) y después las sugerencias.
 
-**Estado actual:** versión `v7` en `test` (copia de seguridad, pines con el dedo, tus puntos en el buscador y Cómo llegar), `v4` en `main`. La carpeta local trabaja en la rama `test`.
+**Estado actual:** versión `v8` en `test` (copia de seguridad, pines con el dedo, Cómo llegar y buscador unificado), `v4` en `main`. La carpeta local trabaja en la rama `test`.
 
 ## Funciones actuales
 
@@ -51,8 +52,8 @@ App web tipo "Google Maps / Wavve" para navegar los ríos y arroyos del Delta de
 ### Buscador
 - **Lugares:** restaurantes, combustible, marinas y muelles, bares y cafés, proveedurías, alojamiento y salud. Se muestran pines en el mapa y una lista desplegable con orden por **más cercano** o A–Z.
 - **Ríos, arroyos y canales:** se buscan por nombre (con o sin tildes), se resaltan en **rojo** y el mapa vuela hasta mostrar el tramo completo.
-- **Tus puntos:** los puntos guardados aparecen primero y se filtran mientras escribís.
-- Historial de búsquedas y sugerencias.
+- **Busca en todo a la vez:** tus puntos guardados (📍, siempre arriba), ríos y arroyos, y lugares. Si coincide un punto guardado, abre su pin con Cómo llegar.
+- Con el buscador vacío: primero el historial (Recientes) y después las sugerencias.
 
 ### Menú hamburguesa (☰)
 - **Puntos:** lista de marcadores guardados, con renombrar, usar de destino o borrar.

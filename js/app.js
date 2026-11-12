@@ -128,7 +128,7 @@ function App(){
     if(fr.current%30===0)trimTiles();
     function P(p){var q=px(p.lat,p.lng,v.z);return{x:q.x-ox,y:q.y-oy}}
     if(d.layers.track&&d.track.length>1){ctx.strokeStyle=C.accent;ctx.lineWidth=4;ctx.lineJoin='round';ctx.beginPath();d.track.forEach(function(p,i){var q=P(p);i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y)});ctx.stroke()}
-    (d.res||[]).forEach(function(r){var on=r.i===d.sel;
+    (d.res||[]).forEach(function(r){if(r.mi!=null)return;var on=r.i===d.sel;
       if(r.lines){ctx.strokeStyle=on?'#ff1f1f':'rgba(255,40,40,.65)';ctx.lineWidth=on?9:6;ctx.lineCap='round';ctx.lineJoin='round';
         r.lines.forEach(function(ln){ctx.beginPath();ln.forEach(function(p,j){var q=P(p);j?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y)});ctx.stroke()});ctx.lineCap='butt'}
       else{var q=P(r);ctx.fillStyle=on?'#ff7a1a':'#7c5cff';ctx.strokeStyle='#fff';ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(q.x,q.y,on?10:7,0,7);ctx.fill();ctx.stroke()}
@@ -254,21 +254,35 @@ function App(){
   function clearSearch(){setQ('');setRes([]);setSel(-1);setSopen(false)}
   function pick(r){setSel(r.i);setSopen(false);if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();
     if(r.lines){var pts=[];r.lines.forEach(function(l){pts=pts.concat(l)});fitPts(pts)}else flyTo(r.lat,r.lng,16)}
+  // Búsqueda unificada: tus puntos guardados + cauces (archivo local, al instante) + lugares (servidor).
+  // Si coincide un punto guardado, va directo a su pin y abre su tarjeta.
+  var sq=useRef(0);
+  function num(a){a.forEach(function(r,i){r.i=i});return a}
   function runSearch(text){
     var t=(typeof text==='string'?text:q).trim();if(!t)return;
+    var my=++sq.current;
     setQ(t);setSopen(true);setSel(-1);setSearching(true);addHist(t);
     var v=V.current,la=Math.round(v.lat*20)/20,lo=Math.round(v.lng*20)/20,cat=null,n=norm(t),body;
     CATS.forEach(function(c){if(!cat&&c.re.test(n))cat=c});
-    if(!cat&&local()){var nr=n.replace(/[^a-z0-9 ]/g,''),loc=local().filter(function(x){return x.tags&&x.tags.waterway&&x.tags.name&&norm(x.tags.name).indexOf(nr)>=0});
-      if(loc.length){var r0=parseRes(loc),p0=[];setRes(r0);setSearching(false);r0.forEach(function(x){x.lines.forEach(function(l){p0=p0.concat(l)})});fitPts(p0);return}}
+    var first=[];
+    if(!cat){
+      var mine=D.current.marks.map(function(m,i){return{name:m.name,kind:'Tu punto guardado',lat:m.lat,lng:m.lng,lines:null,mi:i}})
+        .filter(function(x){return norm(x.name).indexOf(n)>=0});
+      var nr=n.replace(/[^a-z0-9 ]/g,''),loc=local()?parseRes(local().filter(function(x){return x.tags&&x.tags.waterway&&x.tags.name&&norm(x.tags.name).indexOf(nr)>=0})):[];
+      first=num(mine.concat(loc));setRes(first);
+      if(mine.length)openMark(mine[0].mi);
+      else if(loc.length){var p0=[];loc.forEach(function(x){x.lines.forEach(function(l){p0=p0.concat(l)})});fitPts(p0)}}
     if(cat)body='[out:json][timeout:25];('+cat.f.map(function(f){return 'nwr'+f+'(around:15000,'+la.toFixed(4)+','+lo.toFixed(4)+');'}).join('')+');out center tags 80;';
     else{var bb=[la-0.7,lo-0.7,la+0.7,lo+0.7].map(function(x){return x.toFixed(4)}).join(','),rx=flex(t);
-      body='[out:json][timeout:25];(way["waterway"~"^(river|canal|stream|tidal_channel)$"]["name"~"'+rx+'",i]('+bb+');'+['amenity','leisure','tourism'].map(function(k){return 'nwr["name"~"'+rx+'",i]["'+k+'"]('+bb+');'}).join('')+');out geom;'}
-    ovp(body,function(i){if(i>0)say('El servidor tarda, probando otro…')}).then(function(j){var r=parseRes(j.elements||[]);setRes(r);setSearching(false);
-      if(!r.length){if(!marks.some(function(m){return norm(m.name).indexOf(n)>=0}))say('No encontré resultados');return}
+      // Con cauces.json cargado, los cauces ya salieron del archivo: al servidor solo se le piden lugares
+      body='[out:json][timeout:25];('+(local()?'':'way["waterway"~"^(river|canal|stream|tidal_channel)$"]["name"~"'+rx+'",i]('+bb+');')+['amenity','leisure','tourism'].map(function(k){return 'nwr["name"~"'+rx+'",i]["'+k+'"]('+bb+');'}).join('')+');out geom;'}
+    ovp(body,function(i){if(i>0&&!first.length)say('El servidor tarda, probando otro…')}).then(function(j){if(my!==sq.current)return;
+      var extra=parseRes(j.elements||[]),r=num(first.concat(extra));setRes(r);setSearching(false);
+      if(first.length)return;
+      if(!r.length){say('No encontré resultados');return}
       var pts=[];r.forEach(function(x){if(x.lines)x.lines.forEach(function(l){pts=pts.concat(l)});else pts.push(x)});
       if(r.length===1&&!r[0].lines){setSel(0);flyTo(r[0].lat,r[0].lng,16)}else fitPts(pts)})
-     .catch(function(){setSearching(false);say('No pude buscar ahora. Probá de nuevo en un rato.')});
+     .catch(function(){if(my!==sq.current)return;setSearching(false);if(!first.length)say('No pude buscar ahora. Probá de nuevo en un rato.')});
   }
   useEffect(function(){var r=document.documentElement;if(theme==='auto')r.removeAttribute('data-theme');else r.setAttribute('data-theme',theme);
     try{localStorage.setItem(PRE+'delta_theme',theme)}catch(e){}req()},[theme]);
@@ -318,9 +332,9 @@ function App(){
   // Puntos guardados que coinciden con lo escrito (sin tildes). Con el buscador vacío, los 5 más cercanos.
   var nq=norm(q.trim()),saved=marks.map(function(m,i){return{m:m,i:i,d:me?dist(me,m):null}})
     .filter(function(x){return !nq||norm(x.m.name).indexOf(nq)>=0});
-  saved.sort(function(a,b){return (a.d==null?0:a.d)-(b.d==null?0:b.d)});saved=saved.slice(0,nq?20:5);
+  saved.sort(function(a,b){return (a.d==null?0:a.d)-(b.d==null?0:b.d)});saved=nq&&!res.length?saved.slice(0,20):[];
   var list=res.map(function(r){return{r:r,d:dTo(r,sref)}});
-  list.sort(sortBy==='near'?function(a,b){return a.d-b.d}:function(a,b){return a.r.name.localeCompare(b.r.name)});
+  list.sort(function(a,b){var g=(a.r.mi!=null?0:1)-(b.r.mi!=null?0:1);return g||(sortBy==='near'?a.d-b.d:a.r.name.localeCompare(b.r.name))});
   var dst=rec?'Grabando… '+(km/1.852).toFixed(2)+' mn':(km?(km/1.852).toFixed(2)+' mn recorridas':'Sin grabar');
 
   return html`<div id="app">
@@ -337,25 +351,26 @@ function App(){
     <button className="fab burger" aria-label="Menú" onClick=${function(){setMenu(true)}}>☰</button>
     <button className="fab compass" aria-label="Norte arriba" onClick=${northUp}><span ref=${cmp}><svg viewBox="0 0 24 24" width="30" height="30"><path d="M12 2L17 13H7Z" fill="#e5484d"/><path d="M12 22L7 13H17Z" fill="currentColor" opacity=".45"/></svg></span></button>
     <div className="sb"><span>🔍</span><input value=${q} placeholder="Buscar lugares, ríos, arroyos…" enterKeyHint="search"
-      onFocus=${function(){setSopen(true)}} onInput=${function(e){setQ(e.target.value)}}
+      onFocus=${function(){setSopen(true)}} onInput=${function(e){setQ(e.target.value);if(res.length){sq.current++;setRes([]);setSel(-1);setSearching(false)}}}
       onKeyDown=${function(e){if(e.key==='Enter'){runSearch();e.target.blur()}}} />
       ${q?html`<button className="clr" aria-label="Limpiar" onClick=${clearSearch}>✕</button>`:null}</div>
     <div id="sr" className=${sopen?'on':''}>
       ${saved.length?html`<div><div className="srh"><b>Tus puntos</b></div>${saved.map(function(x){return html`<div className="mi" key=${'g'+x.i}>
           <span onClick=${function(){openMark(x.i)}}>📍 ${x.m.name}${x.d!=null?html`<small style=${{color:'var(--muted)',display:'block'}}>Guardado · a ${x.d.toFixed(1)} km</small>`:html`<small style=${{color:'var(--muted)',display:'block'}}>Guardado</small>`}</span>
           <button className="mini" aria-label="Cómo llegar" onClick=${function(){goDest({lat:x.m.lat,lng:x.m.lng,name:x.m.name})}}>➤</button></div>`})}</div>`:null}
-      ${searching?html`<div className="empty">Buscando…</div>`
-       :list.length?html`<div><div className="srh"><b>${list.length} resultados</b><div className="seg">
+      ${searching&&!list.length?html`<div className="empty">Buscando…</div>`
+       :list.length?html`<div><div className="srh"><b>${list.length} resultados${searching?html` <small style=${{color:'var(--muted)',fontWeight:400}}>· buscando más…</small>`:null}</b><div className="seg">
             <button className=${'mini'+(sortBy==='near'?' on':'')} onClick=${function(){setSortBy('near')}}>Más cercano</button>
             <button className=${'mini'+(sortBy==='name'?' on':'')} onClick=${function(){setSortBy('name')}}>A–Z</button></div></div>
           ${list.map(function(x){var r=x.r;return html`<div className=${'mi'+(sel===r.i?' sel':'')} key=${r.i}>
-            <span onClick=${function(){pick(r)}}>${r.name}<small style=${{color:'var(--muted)',display:'block'}}>${r.kind}${r.lines?' · '+r.km.toFixed(1)+' km de largo':''} · a ${x.d.toFixed(1)} km</small></span>
-            ${r.lines?null:html`<button className="mini" aria-label="Guardar" onClick=${function(){setMarks(marks.concat([{name:r.name,lat:r.lat,lng:r.lng}]));say('Guardado: '+r.name)}}>☆</button>
+            <span onClick=${function(){r.mi!=null?openMark(r.mi):pick(r)}}>${r.mi!=null?'📍 ':''}${r.name}<small style=${{color:'var(--muted)',display:'block'}}>${r.kind}${r.lines?' · '+r.km.toFixed(1)+' km de largo':''} · a ${x.d.toFixed(1)} km</small></span>
+            ${r.lines?null:html`${r.mi!=null?null:html`<button className="mini" aria-label="Guardar" onClick=${function(){setMarks(marks.concat([{name:r.name,lat:r.lat,lng:r.lng}]));say('Guardado: '+r.name)}}>☆</button>`}
               <button className="mini" aria-label="Ir" onClick=${function(){goDest({lat:r.lat,lng:r.lng,name:r.name})}}>➤</button>`}
           </div>`})}</div>`
-       :html`<div><div className="srh"><b>Sugerencias</b></div>
-          <div className="chips">${CATS.map(function(c){return html`<button key=${c.n} className="mini" onClick=${function(){runSearch(c.n)}}>${c.e} ${c.n}</button>`})}</div>
-          ${hist.length?html`<div><div className="srh"><b>Recientes</b></div>${hist.slice(0,5).map(function(h){return html`<div className="mi" key=${h}><span onClick=${function(){runSearch(h)}}>${h}</span></div>`})}</div>`:null}</div>`}
+       :saved.length?null
+       :html`<div>${hist.length?html`<div><div className="srh"><b>Recientes</b></div>${hist.slice(0,5).map(function(h){return html`<div className="mi" key=${h}><span onClick=${function(){runSearch(h)}}>🕘 ${h}</span></div>`})}</div>`:null}
+          <div className="srh"><b>Sugerencias</b></div>
+          <div className="chips">${CATS.map(function(c){return html`<button key=${c.n} className="mini" onClick=${function(){runSearch(c.n)}}>${c.e} ${c.n}</button>`})}</div></div>`}
     </div>
     <div id="scrim" className=${menu?'on':''} onClick=${function(){setMenu(false)}}></div>
     <div id="menu" className=${menu?'open':''}>
