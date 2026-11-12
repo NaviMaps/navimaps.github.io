@@ -20,8 +20,9 @@ App web tipo "Google Maps / Wavve" para navegar los ríos y arroyos del Delta de
 14. **Mudanza a NaviMaps (v4, 12/11/2026):** se creó la organización gratuita **NaviMaps** en GitHub, el repositorio pasó a `NaviMaps/navimaps.github.io` y la app se llama **NaviMaps**. Dirección nueva: https://navimaps.github.io/. La vieja (`iangiribaldi.github.io/Maps-nautico/`) ya no existe.
 15. **Copia de seguridad (v5, 12/11/2026, en `test`):** Ajustes > Copia de seguridad, con botones *Exportar* (arma un `.json` con los puntos y el recorrido; en el iPhone abre Compartir para guardarlo en Archivos, WhatsApp o Mail) e *Importar* (suma los puntos sin repetir y pregunta antes de reemplazar el recorrido). Código en `js/respaldo.js`.
 16. **Pines con el dedo (v6, 12/11/2026, en `test`):** se sacó la barra de abajo (Grabar / Marcar / Ir ahí y el campo de nombre) y la mira del centro. Ahora se **mantiene apretado el mapa** medio segundo: aparece un pin rojo y una tarjeta que pide el nombre, con *Guardar*, *Ir ahí* y (si hay destino) *Salir de acá*. **Grabar** pasó a un botón redondo en la columna derecha (rojo con latido mientras graba). El panel de abajo solo aparece cuando hay un destino, con los datos de la ruta.
+17. **Tus puntos y "Cómo llegar" (v7, 12/11/2026, en `test`):** el buscador muestra primero los **puntos guardados** que coinciden con lo escrito (sin tildes, mientras escribís; con el buscador vacío, los 5 más cercanos). **Tocar un punto guardado** (en el mapa o en el buscador) abre una tarjeta como la de Google Maps con el nombre, la distancia y **Cómo llegar**, que marca el destino y **calcula sola la ruta por agua** (si no sabe dónde estás, primero busca tu posición). Al terminar, el mapa encuadra toda la ruta por encima del panel. Los ➤ de resultados y de la lista de puntos hacen lo mismo.
 
-**Estado actual:** versión `v6` en `test` (copia de seguridad y pines con el dedo), `v4` en `main`. La carpeta local trabaja en la rama `test`.
+**Estado actual:** versión `v7` en `test` (copia de seguridad, pines con el dedo, tus puntos en el buscador y Cómo llegar), `v4` en `main`. La carpeta local trabaja en la rama `test`.
 
 ## Funciones actuales
 
@@ -50,6 +51,7 @@ App web tipo "Google Maps / Wavve" para navegar los ríos y arroyos del Delta de
 ### Buscador
 - **Lugares:** restaurantes, combustible, marinas y muelles, bares y cafés, proveedurías, alojamiento y salud. Se muestran pines en el mapa y una lista desplegable con orden por **más cercano** o A–Z.
 - **Ríos, arroyos y canales:** se buscan por nombre (con o sin tildes), se resaltan en **rojo** y el mapa vuela hasta mostrar el tramo completo.
+- **Tus puntos:** los puntos guardados aparecen primero y se filtran mientras escribís.
 - Historial de búsquedas y sugerencias.
 
 ### Menú hamburguesa (☰)
