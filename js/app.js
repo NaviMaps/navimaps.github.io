@@ -55,7 +55,7 @@ function App(){
   var _w=useState(null),wx=_w[0],setWx=_w[1];
   var satR=useRef(!!sv.current.sat);
   // Estilo del mapa base (cuando no está el satélite)
-  var _es=useState(ESTILOS[sv.current.estilo]&&sv.current.estilo!=='sat'?sv.current.estilo:'osm'),estilo=_es[0],setEstilo=_es[1];
+  var _es=useState(ORDEN.indexOf(sv.current.estilo)>=0&&sv.current.estilo!=='sat'?sv.current.estilo:'osm'),estilo=_es[0],setEstilo=_es[1];
   var estR=useRef(estilo);
   function base(){return satR.current?'sat':estR.current}
   var _d=useState(null),dest=_d[0],setDest=_d[1];
