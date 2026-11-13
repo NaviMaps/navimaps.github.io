@@ -41,7 +41,9 @@ App web tipo "Google Maps / Wavve" para navegar los ríos y arroyos del Delta de
 
 29. **Gestos de zoom (v18, 13/11/2026, en `test`):** se sacaron los botones + y −. El doble toque con un dedo acerca con una animación suave (0,3 s) dejando fijo el punto tocado; el toque con dos dedos a la vez (sin moverlos) aleja un nivel, también animado, centrado entre los dedos. Si se toca el mapa durante la animación, se corta. El pellizco sigue igual.
 
-**Estado actual:** versión `v18` en `test` (gestos de zoom), `v17` en `main`. La carpeta local trabaja en la rama `test`.
+30. **Vidrio estilo iPhone (v19, 13/11/2026, en `test`):** rediseño del "liquid glass", más transparente y parecido al de iOS: poco desenfoque (7 px) con colores reforzados de lo que hay detrás, brillo fino en el borde de arriba, sombra suave y bordes más redondeados. Dos niveles: botones, buscador y recuadro de datos muy transparentes; menú, tarjetas y paneles con texto algo más cubiertos para leerse bien sobre el mapa o el satélite. Los botones de adentro de los paneles también son de vidrio. El menú flota separado del borde, con rebote al abrir, y los botones tienen un rebote corto al tocarlos. Versión para modo oscuro con más contraste.
+
+**Estado actual:** versión `v19` en `test` (gestos de zoom y vidrio nuevo), `v17` en `main`. La carpeta local trabaja en la rama `test`.
 
 ## Funciones actuales
 
@@ -80,7 +82,7 @@ App web tipo "Google Maps / Wavve" para navegar los ríos y arroyos del Delta de
 - **Ajustes:** tema (auto, claro, oscuro), velocidad de crucero, prioridad de cauces, estado de los cauces guardados y borrar recorrido.
 
 ### Diseño
-- Estilo de **vidrio esmerilado** (tipo liquid glass) con transiciones suaves.
+- Estilo de **vidrio transparente tipo iPhone** (liquid glass): controles muy transparentes y paneles algo más cubiertos para leer bien, con transiciones y rebotes suaves.
 - Mapa limpio: el panel inferior **solo aparece con un destino**, y es plegable (con resumen de la ruta cuando está plegado).
 
 ### Rendimiento y datos
