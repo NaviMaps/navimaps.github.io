@@ -53,7 +53,9 @@ App web tipo "Google Maps / Wavve" para navegar los ríos y arroyos del Delta de
 
 35. **Más estilos (v24, 13/11/2026, en `test`):** se sumaron de Stadia **Outdoors**, **Terreno** (Stamen) y **Terreno sin nombres** (usan el dominio ya registrado en Stadia). Thunderforest y Jawg se descartaron porque piden una clave de cada servicio.
 
-**Estado actual:** versión `v25` en `test` (gestos de zoom, vidrio nuevo y estilos de mapa), `v17` en `main`. La carpeta local trabaja en la rama `test`.
+36. **Atribución fuera del recuadro (v26, 13/11/2026, en `test`):** con los estilos de Stadia la atribución era larga y estiraba el recuadro de datos hasta tapar el mapa. Ahora va chiquita, en una línea, abajo a la izquierda del mapa.
+
+**Estado actual:** versión `v26` en `test` (gestos de zoom, vidrio nuevo y estilos de mapa), `v17` en `main`. La carpeta local trabaja en la rama `test`.
 
 ## Funciones actuales
 
