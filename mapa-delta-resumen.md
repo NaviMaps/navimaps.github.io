@@ -200,6 +200,8 @@ Los cambios 15 a 21 (v5 a v11) se hicieron desde Claude Code en la nube (claude.
 
 ## Limitaciones conocidas
 
+- **Estilos de Stadia** (Suave, Outdoors, Terreno, Terreno sin nombres): funcionan porque el dominio `navimaps.github.io` está registrado en la cuenta de Stadia (https://client.stadiamaps.com/, plan gratis no comercial). Si se cambia el dominio, se borra la cuenta o se pasa el límite gratis, esos estilos muestran "401 Error"; OSM, Relieve y Satélite siguen andando.
+
 - La ruta depende de lo que esté mapeado en OpenStreetMap. No sabe si un arroyo está seco, ni conoce profundidades, bajíos ni alturas de puentes. **No reemplaza las cartas oficiales.**
 - En iPhone, el GPS deja de grabar si se apaga la pantalla o se cambia de app.
 - El almacenamiento del navegador puede borrarse si la app no está agregada a la pantalla de inicio (Safari borra datos de sitios sin visitar en 7 días). Por eso conviene exportar una copia de seguridad cada tanto (Ajustes > Copia de seguridad).
