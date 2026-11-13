@@ -178,7 +178,7 @@ Los cambios 15 a 21 (v5 a v11) se hicieron desde Claude Code en la nube (claude.
 
 ## Próximos pasos posibles
 
-- **Altura del río y mareas** (datos del INA o SIHN, a verificar qué publican).
+- **Altura del río y mareas** (siguiente tarea, ver el plan en "Plan: altura del río y mareas").
 - Exportar el recorrido también en **GPX** para abrirlo en otras apps náuticas.
 - Recuperar los datos de la dirección vieja: volver a publicar un rato `iangiribaldi.github.io/Maps-nautico/` con la v5, exportar desde ahí e importar en NaviMaps.
 - Ordenar `js/app.js` en partes más chicas (mapa, gestos, panel, menú) con nombres de variables legibles.
@@ -188,3 +188,35 @@ Los cambios 15 a 21 (v5 a v11) se hicieron desde Claude Code en la nube (claude.
 - Pasar a **MapLibre** con estilos propios y **mapas sin conexión**.
 - Evaluar más adelante una **app nativa** o empaquetarla con Capacitor.
 - Cambiar a un proveedor de mapas con plan gratuito (por ejemplo MapTiler) para uso más intensivo.
+
+## Plan: altura del río y mareas (para retomar)
+
+Investigado el 13/11/2026; queda para la próxima sesión.
+
+### De dónde salen los datos
+- **SHN (Servicio de Hidrografía Naval):** altura del Río de la Plata medida y pronosticada en sus estaciones (San Fernando, Buenos Aires, etc.), avisos de crecida por sudestada y tabla de mareas.
+  - Alturas y pronóstico del Río de la Plata: https://www.hidro.gov.ar/oceanografia/AACRIOPLA.asp
+  - Modelos y pronósticos: https://www.hidro.gov.ar/ModelosPronosticos.asp
+  - Datos abiertos (estaciones mareográficas): https://datos.gob.ar/el/dataset/shn-estaciones-mareograficas y https://www.hidro.gov.ar/DA/DatosAbiertos.asp
+- **INA (Instituto Nacional del Agua):** reporte diario del "frente del Delta" (San Fernando sobre el Luján y otras estaciones), con pronóstico a varios días y niveles de alerta (aguas altas = valores que se igualan o superan en el 5 % o menos de los registros).
+  - Sistema de alerta y series: https://alerta.ina.gob.ar/a5/secciones
+  - Previsiones numéricas del Delta: https://ina.gob.ar/alerta/index.php?seccion=10
+  - Reportes diarios en PDF: `https://alerta.ina.gob.ar/ina/06-INFORMES/diario/pdf/reporte_diario_AAAA-MM-DD.pdf` (copia en hidraulica.gob.ar)
+  - Los pronósticos del Paraná medio se actualizan martes y viernes; los del Uruguay, lunes, miércoles y viernes.
+
+### Problema técnico
+La app es una página en el celular: el navegador no puede leer esos sitios directamente (no lo permiten desde otra página y no tienen un formato estable para programas).
+
+### Cómo hacerlo
+1. **Tarea automática de GitHub Actions** (como la que publica la app) que corre cada 30 a 60 minutos, entra al SHN y al INA, saca las alturas de las estaciones del Delta y las guarda en **`alturas.json`** junto a la app.
+2. **La app lee `alturas.json`** como lee `cauces.json`; sin señal muestra el último dato guardado.
+3. **En el mapa:** algo como "San Fernando 1,45 m ↑ · próxima pleamar 23:10 (2,10 m)", aviso si viene una crecida o una bajante fuerte y, al tocarlo, un gráfico de las últimas horas y el pronóstico.
+
+### A tener en cuenta
+- Es la **altura del río respecto de un cero de referencia** de cada estación, **no la profundidad** en un lugar: dice si el agua está alta o baja respecto de lo normal, no el calado de un arroyo.
+- En el Río de la Plata manda más el **viento** (sudestada, viento norte) que la marea astronómica: conviene el pronóstico del SHN, que lo incluye, y no solo la tabla de mareas.
+- Sacar datos de páginas web es frágil: si el SHN o el INA cambian su página, hay que ajustar el programa.
+- GitHub no garantiza la hora exacta de las tareas automáticas (a veces corren con atraso): sirve para esto, pero no es tiempo real al minuto.
+
+### Primer paso al retomar
+Habilitar en el entorno de Claude Code ("navimaps.github.io") el acceso a `hidro.gov.ar` y `alerta.ina.gob.ar` (hoy solo tiene los servidores de OpenStreetMap), ver exactamente cómo publican los datos y elegir la fuente más estable. Después, la tarea automática y la parte de la app.
