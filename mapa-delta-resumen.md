@@ -49,12 +49,14 @@ App web tipo "Google Maps / Wavve" para navegar los ríos y arroyos del Delta de
 
 33. **Solo 3 estilos (v22, 13/11/2026, en `test`):** quedan OSM, Relieve (OpenTopoMap) y Satélite; se sacaron los demás. Si alguien tenía elegido otro estilo, vuelve a OSM.
 
-**Estado actual:** versión `v22` en `test` (gestos de zoom, vidrio nuevo y estilos OSM, Relieve y Satélite), `v17` en `main`. La carpeta local trabaja en la rama `test`.
+34. **Estilo "Suave" de Stadia (v23, 13/11/2026, en `test`):** se agregó Stadia Alidade Smooth (gris claro, muy limpio). No lleva clave en la URL, pero **el dominio `navimaps.github.io` tiene que estar registrado en una cuenta de Stadia** (gratis para uso no comercial): en https://client.stadiamaps.com/ crear la cuenta, crear una "property" y agregar el dominio `navimaps.github.io`. Hasta que esté registrado, los mosaicos muestran "401 Error".
+
+**Estado actual:** versión `v23` en `test` (gestos de zoom, vidrio nuevo y estilos OSM, Relieve, Suave y Satélite), `v17` en `main`. La carpeta local trabaja en la rama `test`.
 
 ## Funciones actuales
 
 ### Mapa
-- **Estilos de mapa:** OSM, Relieve (OpenTopoMap) y Satélite (Esri), más la capa de **señales náuticas** de OpenSeaMap.
+- **Estilos de mapa:** OSM, Relieve (OpenTopoMap), Suave (Stadia, requiere el dominio registrado) y Satélite (Esri), más la capa de **señales náuticas** de OpenSeaMap.
 - Arrastre, zoom con pellizco, doble toque para acercar y toque con dos dedos para alejar (los dos con animación suave).
 - **Rotación con dos dedos** con zona muerta de unos 15° (así el zoom no gira el mapa sin querer).
 - **Brújula** arriba a la derecha; al tocarla vuelve el norte arriba con animación.

@@ -10,11 +10,15 @@ export var ESTILOS = {
     url: function (z, x, y) { return 'https://tile.openstreetmap.org/' + z + '/' + x + '/' + y + '.png'; } },
   relieve: { n: 'Relieve', max: 17, at: 'OpenStreetMap · OpenTopoMap',
     url: function (z, x, y) { return 'https://tile.opentopomap.org/' + z + '/' + x + '/' + y + '.png'; } },
+  // Stadia Alidade Smooth: no lleva clave en la URL, pero el dominio (navimaps.github.io) tiene que estar
+  // registrado en una cuenta de Stadia (gratis para uso no comercial). Sin eso, los mosaicos muestran "401 Error".
+  suave: { n: 'Suave', max: 20, at: 'Stadia Maps · OpenMapTiles · OpenStreetMap',
+    url: function (z, x, y) { return 'https://tiles.stadiamaps.com/tiles/alidade_smooth/' + z + '/' + x + '/' + y + '@2x.png'; } },
   sat: { n: 'Satélite', max: 19, at: 'Esri', url: esri('World_Imagery') }
 };
 
 // Orden en el selector de Capas
-export var ORDEN = ['osm', 'relieve', 'sat'];
+export var ORDEN = ['osm', 'relieve', 'suave', 'sat'];
 
 // Señales náuticas (boyas, balizas, faros, marinas) de OpenSeaMap: capa transparente encima del mapa
 export var SEAMARK = { min: 9, max: 18, at: 'OpenSeaMap',
