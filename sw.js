@@ -1,7 +1,7 @@
 // Service worker de NaviMaps: guarda la app, los cauces y los mosaicos
 // que ya viste para que funcione sin señal.
 // Al cambiar cualquier archivo de la app (index.html, js/, cauces.json), subí el número de VERSION.
-var VERSION = 'v20';
+var VERSION = 'v21';
 // La versión real (/) y la de prueba (/test/) comparten sitio:
 // el nombre de la caché lleva la carpeta para que una no borre la de la otra.
 var SCOPE = new URL(self.registration.scope).pathname;
@@ -53,7 +53,7 @@ self.addEventListener('activate', function (e) {
 
 function isTile(u) {
   return u.hostname === 'tile.openstreetmap.org' || u.hostname === 'server.arcgisonline.com' ||
-    /\.basemaps\.cartocdn\.com$/.test(u.hostname) || u.hostname === 'tiles.openseamap.org';
+    u.hostname === 'a.tile.openstreetmap.fr' || u.hostname === 'tile.opentopomap.org' || u.hostname === 'tiles.openseamap.org';
 }
 
 var trimming = false, added = 0;
