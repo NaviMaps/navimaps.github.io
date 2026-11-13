@@ -59,7 +59,9 @@ App web tipo "Google Maps / Wavve" para navegar los ríos y arroyos del Delta de
 
 38. **Tutorial de bienvenida (v27, 13/11/2026, en `test`):** la primera vez que se abre la app aparece un tutorial de 10 tarjetas de vidrio (bienvenida y cómo agregarla a inicio, gestos, marcar puntos, Cómo llegar, buscar, grabar, posición y satélite, altura del río, menú y aviso de seguridad). Cuando habla de un botón, lo marca con un aro que late. Tiene Siguiente, Atrás y Saltar; se guarda que ya se vio y se puede volver a ver en ☰ › Ajustes › Ver tutorial. Código en `js/tutorial.js`.
 
-**Estado actual:** versión `v27` en `test` (tutorial), `v26` en `main`. La carpeta local trabaja en la rama `test`.
+39. **Tutorial con imágenes y animaciones (v28, 13/11/2026, en `test`):** cada paso del tutorial muestra una captura real de la app (inicio, Cómo llegar con la ruta, buscador, panel del río, menú de Capas) o una animación sobre un pedazo de mapa real (gestos: arrastrar, pellizcar y doble toque; marcar un punto; grabar el recorrido; cambio mapa ↔ satélite). Las imágenes están en `img/tuto/` (WebP, 220 KB en total); las animaciones son CSS en `index.html` (sección "Tutorial") y respetan la opción de reducir movimiento del iPhone.
+
+**Estado actual:** versión `v28` en `test` (tutorial con imágenes), `v26` en `main`. La carpeta local trabaja en la rama `test`.
 
 ## Funciones actuales
 
@@ -125,7 +127,7 @@ App web tipo "Google Maps / Wavve" para navegar los ríos y arroyos del Delta de
 | `js/alturas.js` | Lee `alturas.json`; tendencia, estado, estación más cercana y gráfico |
 | `scripts/alturas.py` | Baja las alturas del INA y las mareas del SHN y arma `alturas.json` (lo corre GitHub cada 30 min) |
 | `zonas.json` | Zonas de práctica deportiva de la Prefectura (34 zonas, pasadas de los croquis) |
-| `js/tutorial.js` | Tutorial de bienvenida (los pasos están en `PASOS`) |
+| `js/tutorial.js` | Tutorial de bienvenida (los pasos están en `PASOS`; imágenes en `img/tuto/`) |
 | `js/estilos.js` | Estilos de mapa (de dónde sale cada uno, zoom máximo, atribución) y capa de OpenSeaMap |
 | `js/zonas.js` | Lee `zonas.json`, colores por deporte y qué zona se tocó |
 | `sw.js` | Service worker: guarda la app, los cauces y los mosaicos vistos para usarla sin señal |
