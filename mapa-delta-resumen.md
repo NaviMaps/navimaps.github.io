@@ -37,7 +37,9 @@ App web tipo "Google Maps / Wavve" para navegar los ríos y arroyos del Delta de
 
 27. **Revisión de zonas descartada (v16 → v17, 13/11/2026):** se probó revisar las zonas una por una (Guazú y Talavera ubicadas por kilómetros, más tramos en la primera sección), pero quedaban mejor como en la v15, así que `zonas.json` volvió a esa versión (34 zonas).
 
-**Estado actual:** versión `v17` en `test` (alturas del río y zonas deportivas como en la v15), `v12` en `main`. La carpeta local trabaja en la rama `test`.
+28. **Todo pasa a `main` (13/11/2026):** alturas del río automáticas y zonas deportivas publicadas en https://navimaps.github.io/.
+
+**Estado actual:** versión `v17` en `main` y en `test`. La carpeta local trabaja en la rama `test`.
 
 ## Funciones actuales
 
