@@ -122,6 +122,8 @@ Este resumen (`mapa-delta-resumen.md`) también está en el repositorio, para re
 3. GitHub Pages tarda uno o dos minutos en publicar. En el iPhone: abrir la app con señal, cerrarla y volver a abrirla.
 4. Para refrescar los cauces: correr de nuevo `descargar-cauces.ps1`, subir el nuevo `cauces.json` y la `VERSION`.
 5. Para refrescar los lugares: correr `powershell -ExecutionPolicy Bypass -File .\descargar-lugares.ps1` dentro de la carpeta, subir el nuevo `lugares.json` y la `VERSION`.
+   - Para abrir PowerShell en la carpeta: en el Explorador de archivos (Windows + E), entrar a `navimaps.github.io`, hacer clic en un espacio vacío de la barra de dirección, escribir `powershell` y apretar Enter. La línea tiene que terminar en `navimaps.github.io>`.
+   - Al terminar, el script dice en verde `Listo: ...\lugares.json (N lugares, X KB)` y cuántos hay de cada tipo.
 
 ## Cómo seguir en otra computadora
 
@@ -132,6 +134,32 @@ Este resumen (`mapa-delta-resumen.md`) también está en el repositorio, para re
 5. Para probar en la computadora hace falta un servidor local, porque los módulos y el service worker no funcionan abriendo el archivo con doble clic. Por ejemplo `npx serve` (Node) o `python -m http.server 8765`, y abrir `http://localhost:8765`.
 6. Antes de empezar, `git pull` para traer lo último; al terminar, subir `VERSION`, `git commit` y `git push`.
 7. Con Claude Code: abrir esa carpeta y pedirle que lea `mapa-delta-resumen.md` para tener todo el contexto.
+
+## Sesión con Claude Code en la nube (12 y 13/11/2026)
+
+Los cambios 15 a 21 (v5 a v11) se hicieron desde Claude Code en la nube (claude.ai/code), con el repositorio conectado desde GitHub, sin la computadora del laburo. Todo quedó en la rama `test`.
+
+| Versión | Commit | Cambio |
+|---|---|---|
+| v5 | `2401338` | Copia de seguridad: exportar e importar |
+| v6 | `37d5c65` | Pines con el dedo; se sacó la barra de abajo |
+| v7 | `b5ac5f5` | Tus puntos en el buscador y "Cómo llegar" |
+| v8 | `0d3c8c4` | Buscador unificado; historial primero |
+| v9 | `d76d209` | El buscador ya no queda trabado en "Buscando…" |
+| v10 | `9acf111` | "Quitar destino" borra también la salida |
+| v11 | `a278bd1` | Lugares en el mapa (`lugares.json`) y su script |
+
+**Cómo se probó:** cada cambio se probó en un navegador automático (Chromium) simulando un iPhone, con los servidores externos simulados o bloqueados. Se probaron exportar e importar, el pin con toque largo (y que no aparezca con un toque corto ni al arrastrar), la tarjeta de un punto guardado, Cómo llegar con la ruta calculada, el buscador con un servidor lento (20 s), Quitar destino y los lugares.
+
+**Falta probar en el iPhone real:**
+- El menú Compartir al exportar.
+- Que mantener apretado el mapa no abra el menú de "copiar o guardar imagen" de Safari.
+- Tocar puntos o lugares muy cercanos entre sí (el radio de toque es de unos 24 px).
+- Cómo se ven los íconos de lugares.
+
+**Autor de los commits:** quedaron a nombre de `iangiribaldi` con el correo privado de GitHub, como dice "Cómo seguir en otra computadora". GitHub puede marcarlos "Unverified" (no están firmados); es solo una etiqueta.
+
+**Pasar `test` a `main`** cuando todo esté aprobado: `git checkout main`, `git merge test`, `git push` y `git checkout test`.
 
 ## Limitaciones conocidas
 
