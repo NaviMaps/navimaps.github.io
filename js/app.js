@@ -6,6 +6,7 @@ import { CATS, ovp, local, waterEls, parseRes, dTo, lugares, lugaresFecha } from
 import { PRE, ES_TEST } from './entorno.js';
 import { exportar, leer, unirPuntos } from './respaldo.js';
 import { ESTILOS, ORDEN, SEAMARK } from './estilos.js';
+import { Tutorial, tutorialVisto } from './tutorial.js';
 import { zonas, zonaEn, DEPORTES, fuenteZonas, largo } from './zonas.js';
 import { alturas, ultimo, fresca, tendencia, estado, hace, metros, hora, dia, cercana, mareas, grafico } from './alturas.js';
 
@@ -85,6 +86,8 @@ function App(){
   var _ri=useState(null),rio=_ri[0],setRio=_ri[1];
   // Zonas deportivas de Prefectura: zn es la zona abierta en la tarjeta
   var _zn=useState(null),zn=_zn[0],setZn=_zn[1];
+  // Tutorial de bienvenida: la primera vez que se abre la app, o desde Ajustes › Ver tutorial
+  var _tu=useState(!tutorialVisto()),tuto=_tu[0],setTuto=_tu[1];
   useEffect(function(){function f(){req()}window.addEventListener('delta-zonas',f);return function(){window.removeEventListener('delta-zonas',f)}},[]);
   useEffect(function(){function f(){setRv(function(x){return x+1});req()}window.addEventListener('delta-alturas',f);if(alturas())f();return function(){window.removeEventListener('delta-alturas',f)}},[]);
   useEffect(function(){function f(){setLgc(lugares()?lugares().length:0);req()}window.addEventListener('delta-lugares',f);f();return function(){window.removeEventListener('delta-lugares',f)}},[]);
@@ -516,6 +519,7 @@ function App(){
               <button className="mini" onClick=${doExport}>Exportar</button>
               <button className="mini" onClick=${function(){if(fileIn.current)fileIn.current.click()}}>Importar</button></div>
               <input ref=${fileIn} type="file" accept=".json,application/json" style=${{display:'none'}} onChange=${doImport} /></div>
+            <div className="lr"><span>Cómo se usa la app</span><button className="mini" onClick=${function(){setMenu(false);setTuto(true)}}>Ver tutorial</button></div>
             <div className="lr"><span>Borrar recorrido grabado</span><button className="mini" style=${{color:'var(--danger)'}} onClick=${function(){trk.current=[];kmR.current=0;setTrack([]);setKm(0);say('Recorrido borrado')}}>Borrar</button></div>
           </div>`}
       </div>
@@ -583,6 +587,7 @@ function App(){
         <small>${route?(route.ok?'Ruta sobre cauces de OpenStreetMap que prioriza ríos, luego canales y arroyos. No sabe si un arroyo está seco ni las alturas de puentes. No reemplaza las cartas oficiales.':route.msg+'. Se muestra la línea recta.'):'Línea recta. Tocá Ruta por agua para seguir los cauces.'}</small>
       </div>
     </div>`:null}
+    ${tuto?html`<${Tutorial} html=${html} onClose=${function(){setTuto(false)}} />`:null}
   </div>`;
 }
 ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));

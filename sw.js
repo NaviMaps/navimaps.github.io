@@ -1,7 +1,7 @@
 // Service worker de NaviMaps: guarda la app, los cauces y los mosaicos
 // que ya viste para que funcione sin señal.
 // Al cambiar cualquier archivo de la app (index.html, js/, cauces.json), subí el número de VERSION.
-var VERSION = 'v26';
+var VERSION = 'v27';
 // La versión real (/) y la de prueba (/test/) comparten sitio:
 // el nombre de la caché lleva la carpeta para que una no borre la de la otra.
 var SCOPE = new URL(self.registration.scope).pathname;
@@ -21,6 +21,7 @@ var PRECACHE = [
   './js/alturas.js',
   './js/zonas.js',
   './js/estilos.js',
+  './js/tutorial.js',
   './zonas.json',
   './cauces.json',
   './lugares.json',
