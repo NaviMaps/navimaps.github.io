@@ -55,7 +55,9 @@ App web tipo "Google Maps / Wavve" para navegar los ríos y arroyos del Delta de
 
 36. **Atribución fuera del recuadro (v26, 13/11/2026, en `test`):** con los estilos de Stadia la atribución era larga y estiraba el recuadro de datos hasta tapar el mapa. Ahora va chiquita, en una línea, abajo a la izquierda del mapa.
 
-**Estado actual:** versión `v26` en `test` (gestos de zoom, vidrio nuevo y estilos de mapa), `v17` en `main`. La carpeta local trabaja en la rama `test`.
+37. **Todo pasa a `main` (13/11/2026):** gestos de zoom, vidrio estilo iPhone, estilos de mapa (OSM, Relieve, Suave, Outdoors, Terreno, Terreno sin nombres, Satélite), señales náuticas y atribución abajo, publicados en https://navimaps.github.io/.
+
+**Estado actual:** versión `v26` en `main` y en `test`. La carpeta local trabaja en la rama `test`.
 
 ## Funciones actuales
 
