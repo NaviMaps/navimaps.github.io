@@ -258,12 +258,20 @@ function App(){
     var c=cv.current,G={ptr:{},last:null,lastTap:0,pinch:null},v=V.current;
     function pos(e){var r=c.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}}
     // Zoom animado alrededor de un punto de la pantalla (doble toque: acerca; toque con dos dedos: aleja)
+    // Mueve el mapa dx,dy píxeles de pantalla (respetando el giro)
+    function panBy(dx,dy){var cr=Math.cos(v.r),sr=Math.sin(v.r),c0=px(v.lat,v.lng,v.z),q=ll(c0.x-(dx*cr+dy*sr),c0.y-(-dx*sr+dy*cr),v.z);v.lat=Math.max(-85,Math.min(85,q.lat));v.lng=q.lng;req()}
+    // Inercia: al soltar el dedo rápido, el mapa sigue con esa velocidad y se frena de a poco
+    function inercia(vx,vy){if(G.anim)cancelAnimationFrame(G.anim);var last=performance.now();
+      function f(now){var dt=Math.min(40,now-last);last=now;panBy(vx*dt,vy*dt);var k=Math.pow(0.9955,dt);vx*=k;vy*=k;
+        if(Math.hypot(vx,vy)>0.02)G.anim=requestAnimationFrame(f);else{G.anim=0;save()}}
+      G.anim=requestAnimationFrame(f)}
     function animZoom(sx,sy,dz){if(G.anim)cancelAnimationFrame(G.anim);var z0=v.z,t0=performance.now(),T=300;
       function f(now){var k=Math.min(1,(now-t0)/T),e=1-Math.pow(1-k,3);zoomAt(sx,sy,z0+dz*e);if(k<1)G.anim=requestAnimationFrame(f);else{G.anim=0;save()}}
       G.anim=requestAnimationFrame(f)}
     function size(){var r=c.getBoundingClientRect();c.width=r.width*dpr;c.height=r.height*dpr;req()}
     function down(e){setSopen(false);if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();c.setPointerCapture(e.pointerId);
       if(G.anim){cancelAnimationFrame(G.anim);G.anim=0}
+      G.vs=[];
       G.ptr[e.pointerId]=pos(e);var np0=Object.keys(G.ptr).length;
       // Gesto: cuántos dedos llegó a tener, cuándo empezó y cuánto se movió (para reconocer el toque con dos dedos)
       if(np0===1)G.gs={t:Date.now(),maxp:1,moved:0,mid:null};else if(G.gs){G.gs.maxp=Math.max(G.gs.maxp,np0);var pp=Object.keys(G.ptr).map(function(k){return G.ptr[k]});G.gs.mid={x:(pp[0].x+pp[1].x)/2,y:(pp[0].y+pp[1].y)/2}}
@@ -279,8 +287,13 @@ function App(){
           var cr=Math.cos(v.r),sr=Math.sin(v.r),sx=mx-G.pinch.x,sy=my-G.pinch.y,c1=px(v.lat,v.lng,v.z),q=ll(c1.x-(sx*cr+sy*sr),c1.y-(-sx*sr+sy*cr),v.z);v.lat=q.lat;v.lng=q.lng;req()}
         G.pinch={d:d,x:mx,y:my,a:Math.atan2(b.y-a.y,b.x-a.x)};if(G.last)G.last.moved=99;return}
       var dx=np.x-p.x,dy=np.y-p.y;if(G.last)G.last.moved+=Math.abs(dx)+Math.abs(dy);if(G.gs)G.gs.moved+=Math.abs(dx)+Math.abs(dy);if(G.last&&G.last.moved>=10)clearTimeout(G.lp);
-      var cr2=Math.cos(v.r),sr2=Math.sin(v.r),c2=px(v.lat,v.lng,v.z),q2=ll(c2.x-(dx*cr2+dy*sr2),c2.y-(-dx*sr2+dy*cr2),v.z);v.lat=Math.max(-85,Math.min(85,q2.lat));v.lng=q2.lng;G.ptr[e.pointerId]=np;req()}
-    function up(e){var np=pos(e);clearTimeout(G.lp);delete G.ptr[e.pointerId];G.pinch=null;
+      panBy(dx,dy);G.ptr[e.pointerId]=np;
+      var tn=performance.now();(G.vs=G.vs||[]).push({t:tn,x:np.x,y:np.y});while(G.vs.length&&tn-G.vs[0].t>100)G.vs.shift()}
+    function up(e){var np=pos(e);clearTimeout(G.lp);
+      if(Object.keys(G.ptr).length===1&&G.gs&&G.gs.maxp===1&&G.vs&&G.vs.length>1){var a=G.vs[0],b=G.vs[G.vs.length-1],dt=b.t-a.t;
+        if(dt>10&&performance.now()-b.t<60){var vx=(b.x-a.x)/dt,vy=(b.y-a.y)/dt,sp=Math.hypot(vx,vy);
+          if(sp>0.25){var m=Math.min(1,4/sp);G.vs=[];delete G.ptr[e.pointerId];G.pinch=null;inercia(vx*m,vy*m);return}}}
+      delete G.ptr[e.pointerId];G.pinch=null;
       if(!Object.keys(G.ptr).length&&G.gs&&G.gs.maxp===2&&Date.now()-G.gs.t<350&&G.gs.moved<14&&G.gs.mid){var m=G.gs.mid;G.gs=null;G.lastTap=0;animZoom(m.x,m.y,-1);return}
       if(!Object.keys(G.ptr).length){if(G.last&&G.last.moved<8&&Date.now()-G.last.t<300){
         if(D.current.capas){setCapas(false);G.lastTap=0;return}  // con el panel de capas abierto, tocar el mapa solo lo cierra

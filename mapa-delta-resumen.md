@@ -73,13 +73,15 @@ App web tipo "Google Maps / Wavve" para navegar los ríos y arroyos del Delta de
 
 45. **A `main` (13/11/2026):** animación de Cómo llegar, botón de Capas tipo persiana (que se cierra al tocar afuera) y la slide de capas y zonas deportivas, publicados en https://navimaps.github.io/.
 
-**Estado actual:** versión `v33` en `main` y en `test`. La carpeta local trabaja en la rama `test`.
+46. **Inercia al arrastrar (v34, 13/11/2026, en `test`):** si se suelta el mapa mientras se lo mueve rápido, sigue deslizándose con la velocidad del dedo y se frena de a poco (como en cualquier app de mapas). Tocar el mapa lo frena en seco.
+
+**Estado actual:** versión `v34` en `test` (inercia), `v33` en `main`. La carpeta local trabaja en la rama `test`.
 
 ## Funciones actuales
 
 ### Mapa
 - **Estilos de mapa:** OSM, Relieve (OpenTopoMap), Suave, Outdoors, Terreno y Terreno sin nombres (Stadia, dominio registrado) y Satélite (Esri), más la capa de **señales náuticas** de OpenSeaMap.
-- Arrastre, zoom con pellizco, doble toque para acercar y toque con dos dedos para alejar (los dos con animación suave).
+- Arrastre con inercia, zoom con pellizco, doble toque para acercar y toque con dos dedos para alejar (los dos con animación suave).
 - **Rotación con dos dedos** con zona muerta de unos 15° (así el zoom no gira el mapa sin querer).
 - **Brújula** arriba a la derecha; al tocarla vuelve el norte arriba con animación.
 - Escala del mapa en metros o km.
