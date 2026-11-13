@@ -5,6 +5,7 @@ import { PREFS, solve } from './ruta.js';
 import { CATS, ovp, local, waterEls, parseRes, dTo, lugares, lugaresFecha } from './datos.js';
 import { PRE, ES_TEST } from './entorno.js';
 import { exportar, leer, unirPuntos } from './respaldo.js';
+import { zonas, zonaEn, DEPORTES, fuenteZonas, largo } from './zonas.js';
 import { alturas, ultimo, fresca, tendencia, estado, hace, metros, hora, dia, cercana, mareas, grafico } from './alturas.js';
 
 var useState = React.useState, useEffect = React.useEffect, useRef = React.useRef;
@@ -77,6 +78,9 @@ function App(){
   // Alturas del río: rv cambia cuando llega un alturas.json nuevo; rio es la estación abierta en el panel
   var _rv=useState(0),rv=_rv[0],setRv=_rv[1];
   var _ri=useState(null),rio=_ri[0],setRio=_ri[1];
+  // Zonas deportivas de Prefectura: zn es la zona abierta en la tarjeta
+  var _zn=useState(null),zn=_zn[0],setZn=_zn[1];
+  useEffect(function(){function f(){req()}window.addEventListener('delta-zonas',f);return function(){window.removeEventListener('delta-zonas',f)}},[]);
   useEffect(function(){function f(){setRv(function(x){return x+1});req()}window.addEventListener('delta-alturas',f);if(alturas())f();return function(){window.removeEventListener('delta-alturas',f)}},[]);
   useEffect(function(){function f(){setLgc(lugares()?lugares().length:0);req()}window.addEventListener('delta-lugares',f);f();return function(){window.removeEventListener('delta-lugares',f)}},[]);
   useEffect(function(){function f(){setLc(local()?local().length:0)}window.addEventListener('delta-local',f);f();return function(){window.removeEventListener('delta-local',f)}},[]);
@@ -92,7 +96,7 @@ function App(){
   var drawnPois=useRef([]),drawnRio=useRef([]);
   var cv=useRef(null),sc=useRef(null),scl=useRef(null),raf=useRef(0),tiles=useRef({}),drawRef=useRef(null);
   var D=useRef({}),wid=useRef(null),first=useRef(true),lock=useRef(null),trk=useRef(track),kmR=useRef(0),recR=useRef(false),tt=useRef(0),saveT=useRef(0),fr=useRef(0);
-  D.current={rio:rio,pin:pin,marks:marks,track:track,me:me,dest:dest,route:route,layers:layers,orig:orig,res:res,sel:sel,cruise:cruise};
+  D.current={zn:zn,rio:rio,pin:pin,marks:marks,track:track,me:me,dest:dest,route:route,layers:layers,orig:orig,res:res,sel:sel,cruise:cruise};
 
   // Guarda todo en el celular. save() junta varios cambios en una sola escritura:
   // normalmente espera 0,4 s; mientras grabás, escribe como mucho cada 15 s (el recorrido puede ser largo).
@@ -136,6 +140,15 @@ function App(){
     if(fr.current%30===0)trimTiles();
     function P(p){var q=px(p.lat,p.lng,v.z);return{x:q.x-ox,y:q.y-oy}}
     if(d.layers.track&&d.track.length>1){ctx.strokeStyle=C.accent;ctx.lineWidth=4;ctx.lineJoin='round';ctx.beginPath();d.track.forEach(function(p,i){var q=P(p);i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y)});ctx.stroke()}
+    // Zonas deportivas de Prefectura (desde zoom 11): áreas pintadas y tramos de río con el color de cada deporte
+    var ZN=zonas();
+    if(ZN&&d.layers.zonas!==false&&v.z>=11){ctx.lineCap='round';ctx.lineJoin='round';
+      ZN.forEach(function(z){var dp=DEPORTES[z.d],on=d.zn&&d.zn.id===z.id;ctx.beginPath();
+        z.pts.forEach(function(p,i){var q=P(p);i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y)});
+        if(z.area){ctx.closePath();ctx.globalAlpha=on?.45:.25;ctx.fillStyle=dp.c;ctx.fill();ctx.globalAlpha=.9;ctx.strokeStyle=dp.c;ctx.lineWidth=on?4:2;ctx.setLineDash(z.ap?[8,6]:[]);ctx.stroke()}
+        else{ctx.globalAlpha=on?.95:.6;ctx.strokeStyle=dp.c;ctx.lineWidth=(on?10:7)*Math.min(1.4,Math.max(.7,(v.z-10)/4));ctx.setLineDash(z.ap?[12,8]:[]);ctx.stroke()}
+        ctx.setLineDash([]);ctx.globalAlpha=1});
+      ctx.lineCap='butt'}
     (d.res||[]).forEach(function(r){if(r.mi!=null||(r.poi&&lugares()&&d.layers.pois!==false&&v.z>=(r.c==='fuel'||r.c==='marina'?13:15)))return;var on=r.i===d.sel;
       if(r.lines){ctx.strokeStyle=on?'#ff1f1f':'rgba(255,40,40,.65)';ctx.lineWidth=on?9:6;ctx.lineCap='round';ctx.lineJoin='round';
         r.lines.forEach(function(ln){ctx.beginPath();ln.forEach(function(p,j){var q=P(p);j?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y)});ctx.stroke()});ctx.lineCap='butt'}
@@ -236,7 +249,9 @@ function App(){
       if(!Object.keys(G.ptr).length){if(G.last&&G.last.moved<8&&Date.now()-G.last.t<300){var hit=tapMark(np);
         if(hit>=0){var hm=D.current.marks[hit];setName('');setPin({lat:hm.lat,lng:hm.lng,mi:hit});G.lastTap=0;save();return}
         var hr=tapRio(np);if(hr){setPin(null);setRio(hr.id);G.lastTap=0;save();return}
-        var hp=tapPoi(np);if(hp){setName('');setPin({lat:hp.lat,lng:hp.lng,poi:hp});G.lastTap=0;save();return}
+        var hp=tapPoi(np);if(hp){setName('');setZn(null);setPin({lat:hp.lat,lng:hp.lng,poi:hp});G.lastTap=0;save();return}
+        if(D.current.layers.zonas!==false&&v.z>=11){var hz=zonaEn(toLL(np.x,np.y),v.z);if(hz){setPin(null);setRio(null);setZn(hz);G.lastTap=0;save();return}}
+        if(D.current.zn)setZn(null);
         if(D.current.pin&&(D.current.pin.mi!=null||D.current.pin.poi))setPin(null);
         var n=Date.now();if(n-G.lastTap<320){zoomAt(np.x,np.y,v.z+1);G.lastTap=0}else G.lastTap=n}save()}}
     function ctxm(e){e.preventDefault()}
@@ -251,7 +266,7 @@ function App(){
   },[]);
 
   useEffect(function(){req();save()},[marks,track,me,dest,route,layers,orig,res,sel,cruise,sat]);
-  useEffect(req,[pin,rio,rv]);
+  useEffect(req,[pin,rio,rv,zn]);
 
   function wake(){try{if(navigator.wakeLock)navigator.wakeLock.request('screen').then(function(l){lock.current=l}).catch(function(){})}catch(e){}}
   function startGPS(){
@@ -458,6 +473,8 @@ function App(){
             <div className="lr"><span>Destino y ruta</span>${sw(layers.route,function(){setLayer('route')})}</div>
             <div className="lr"><span>Viento y clima</span>${sw(layers.wx,function(){setLayer('wx')})}</div>
             <div className="lr"><span>Vista satelital</span>${sw(sat,toggleSat)}</div>
+            <div className="lr"><span>Zonas deportivas <small style=${{color:'var(--muted)'}}>(Prefectura)</small></span>${sw(layers.zonas!==false,function(){var n=Object.assign({},layers);n.zonas=layers.zonas===false;setLayers(n)})}</div>
+            ${layers.zonas!==false?html`<div className="zleg">${Object.keys(DEPORTES).map(function(k){var dp=DEPORTES[k];return html`<span key=${k}><i style=${{background:dp.c}}></i>${dp.n}</span>`})}</div>`:null}
             <div className="lr"><span>Alturas del río</span>${sw(layers.rio!==false,function(){var n=Object.assign({},layers);n.rio=layers.rio===false;setLayers(n)})}</div>
           </div>`
         :tab==='historial'?html`<div>${hist.length?hist.map(function(h){return html`<div className="mi" key=${h}><span onClick=${function(){setMenu(false);runSearch(h)}}>🔍 ${h}</span></div>`}):html`<div className="empty">Todavía no hiciste búsquedas.</div>`}
@@ -496,6 +513,13 @@ function App(){
       ${sh&&sh.aviso?html`<div className="rioaviso"><b>⚠ Aviso del SHN</b><small>${sh.aviso}</small></div>`:null}
       <small style=${{color:'var(--muted)'}}>Altura sobre el cero de la escala: no es la profundidad del lugar.${e.alerta!=null?' Alerta desde '+metros(e.alerta)+'.':''}${e.bajas!=null?' Aguas bajas hasta '+metros(e.bajas)+'.':''} Datos: INA y SHN, actualizados ${hace(new Date(AL.actualizado))}.</small>
     </div>`})(rioSel):null}
+    ${zn&&!pin&&!rioSel?(function(z){var dp=DEPORTES[z.d];return html`<div id="pincard">
+      <div className="row" style=${{alignItems:'center'}}><div style=${{flex:1}}><b style=${{fontSize:'18px'}}>${dp.e} ${dp.n}</b>
+        <small style=${{color:'var(--muted)',display:'block'}}>Zona de práctica deportiva · ${z.sec}${z.area?'':' · '+largo(z).toFixed(1).replace('.',',')+' km'}</small></div>
+        <button className="clr" aria-label="Cerrar" onClick=${function(){setZn(null)}}>✕</button></div>
+      <small style=${{color:'var(--muted)'}}>${z.ap?'Ubicación aproximada, pasada a mano del croquis de la Prefectura. ':'Tramo pasado del croquis de la Prefectura sobre el trazado del río. '}Es una referencia: vale lo que dice la disposición vigente de la Prefectura.</small>
+      ${fuenteZonas()?html`<a className="btn" style=${{display:'flex',alignItems:'center',justifyContent:'center',textDecoration:'none'}} href=${fuenteZonas()} target="_blank" rel="noopener">Ver croquis de la Prefectura</a>`:null}
+    </div>`})(zn):null}
     ${pin&&pin.mi!=null&&marks[pin.mi]?html`<div id="pincard">
       <div className="row" style=${{alignItems:'center'}}><div style=${{flex:1}}><b style=${{fontSize:'18px'}}>${marks[pin.mi].name}</b>
         <small style=${{color:'var(--muted)',display:'block'}}>Punto guardado${me?' · a '+(dist(me,pin)/1.852).toFixed(1)+' mn ('+dist(me,pin).toFixed(1)+' km)':''}</small></div>

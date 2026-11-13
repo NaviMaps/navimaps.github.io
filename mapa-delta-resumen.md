@@ -31,7 +31,9 @@ App web tipo "Google Maps / Wavve" para navegar los ríos y arroyos del Delta de
 
 24. **Alturas del río y mareas (v13, 13/11/2026, en `test`):** datos del INA (alturas medidas y pronóstico) y del SHN (pleamares, bajamares y avisos), actualizados solos cada 30 minutos por GitHub Actions. Ver "Alturas del río y mareas (cómo funciona)".
 
-**Estado actual:** versión `v13` en `test` (alturas del río), `v12` en `main`. La carpeta local trabaja en la rama `test`.
+25. **Zonas deportivas de Prefectura (v14, 13/11/2026, en `test`):** capa con las zonas de práctica deportiva (esquí y wakeboard, jet ski, motonáutica, vela, windsurf y kite, remo y SUP, fondeo, flyboard) pasadas de los croquis de la Prefectura. Ver "Zonas deportivas (cómo se armaron)".
+
+**Estado actual:** versión `v14` en `test` (alturas del río y zonas deportivas), `v12` en `main`. La carpeta local trabaja en la rama `test`.
 
 ## Funciones actuales
 
@@ -96,6 +98,8 @@ App web tipo "Google Maps / Wavve" para navegar los ríos y arroyos del Delta de
 | `descargar-cauces.ps1` | Script de PowerShell que baja el Delta en 6 partes y arma `cauces.json` |
 | `js/alturas.js` | Lee `alturas.json`; tendencia, estado, estación más cercana y gráfico |
 | `scripts/alturas.py` | Baja las alturas del INA y las mareas del SHN y arma `alturas.json` (lo corre GitHub cada 30 min) |
+| `zonas.json` | Zonas de práctica deportiva de la Prefectura (35 zonas, pasadas de los croquis) |
+| `js/zonas.js` | Lee `zonas.json`, colores por deporte y qué zona se tocó |
 | `sw.js` | Service worker: guarda la app, los cauces y los mosaicos vistos para usarla sin señal |
 | `manifest.webmanifest` | Nombre, colores e íconos para instalarla en la pantalla de inicio |
 | `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | Íconos de la app |
@@ -237,3 +241,21 @@ San Fernando, Tigre, Arroyo Carapachay, Canal Seoane, Paraná Miní, Chaná Min�
 - Si el SHN o el INA cambian sus páginas o su API, `alturas.py` deja de traer esa parte. La app muestra hace cuánto es el dato, y GitHub manda un mail cuando una tarea falla.
 - GitHub puede correr las tareas programadas con atraso, y **las desactiva si el repositorio pasa 60 días sin cambios**. Si pasa, se reactivan en GitHub › Actions › Publicar › Enable workflow.
 - Para probar el script en la compu: `python3 scripts/alturas.py alturas.json` (Windows: `py scripts\alturas.py alturas.json`).
+
+## Zonas deportivas (cómo se armaron)
+
+Hecho el 13/11/2026 (v14).
+
+**Fuente:** la Prefectura Naval publica las zonas habilitadas como **imágenes** (croquis sobre la carta náutica), no como datos de mapa: https://www.argentina.gob.ar/prefecturanaval/deportesnauticos/referencia-mapa-practica-deportiva. Colores: amarillo remo y SUP, rojo esquí y wakeboard, verde vela, azul windsurf y kite, marrón motonáutica, negro moto de agua o jet ski, gris fondeo, naranja flyboard.
+
+**Áreas pasadas (35 zonas en `zonas.json`):**
+- **Primera sección de islas** (frente a Tigre y San Fernando): remo en muchos arroyos, fondeo, motonáutica en el Río San Antonio y otros tramos, vela en el Paraná de las Palmas y esquí y wake en la desembocadura del Palmas.
+- **Segunda sección:** esquí y wake en todo el Río Barca Grande y en el tramo medio del Paraná Miní; jet ski en el Arroyo La Barquita y el Canal Nº 4; motonáutica en el Paraná Miní hasta la desembocadura.
+- **Canal Costanero:** jet ski frente a San Isidro, windsurf y kite frente a San Isidro y Olivos, vela en el río abierto y remo pegado a la costa.
+- **Escobar:** esquí y wake en el Paraná de las Palmas, km 77,5 a 81 (margen derecha).
+- **Paraná Guazú y Pasaje Talavera:** esquí y wake en el Talavera, vela en el Guazú y jet ski cerca de Cinco Bocas.
+- Faltan los croquis de Campana, Zárate, Ibicuy, Baradero, San Pedro y Paso Los Ratones (se pueden sumar igual).
+
+**Cómo se pasaron:** cada croquis se ubicó sobre el mapa con puntos conocidos (cruces de ríos de `cauces.json`, clubes náuticos y pueblos buscados en OpenStreetMap). Después se separó cada color, y las líneas se pegaron al trazado real del río cuando se pudo reconocer cuál era. Las que no siguen un río mapeado o están en agua abierta quedaron **aproximadas** (se dibujan punteadas en la app; error de unos cientos de metros). En `zonas.json`: `d` deporte, `t` tipo (`l` línea, `a` área), `s` sección, `ap` aproximada, `p` puntos `[lat, lng]`.
+
+**En la app:** desde zoom 11 se ven las líneas y áreas con el color de cada deporte. Al tocar una, la tarjeta dice el deporte, la sección, el largo y si es aproximada, con un botón al croquis original. Capa "Zonas deportivas" en ☰ › Capas, con las referencias de colores. **Es una referencia: vale lo que dice la disposición vigente de la Prefectura.**
