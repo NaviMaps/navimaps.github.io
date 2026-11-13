@@ -87,7 +87,7 @@ App web tipo "Google Maps / Wavve" para navegar los ríos y arroyos del Delta de
 | `js/datos.js` | Overpass con respaldo, `cauces.json` y resultados de búsqueda |
 | `cauces.json` | Cauces del Delta bajados de OpenStreetMap |
 | `lugares.json` | Lugares del Delta (combustible, restaurantes, marinas…) bajados de OpenStreetMap |
-| `descargar-lugares.ps1` | Script de PowerShell que baja los lugares del Delta y arma `lugares.json` |
+| `descargar-lugares.ps1` | Script de PowerShell que baja los lugares del Delta en 6 partes (como el de los cauces) y arma `lugares.json` |
 | `descargar-cauces.ps1` | Script de PowerShell que baja el Delta en 6 partes y arma `cauces.json` |
 | `sw.js` | Service worker: guarda la app, los cauces y los mosaicos vistos para usarla sin señal |
 | `manifest.webmanifest` | Nombre, colores e íconos para instalarla en la pantalla de inicio |
