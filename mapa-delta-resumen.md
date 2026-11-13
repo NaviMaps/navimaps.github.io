@@ -51,14 +51,14 @@ App web tipo "Google Maps / Wavve" para navegar los ríos y arroyos del Delta de
 
 34. **Estilo "Suave" de Stadia (v23, 13/11/2026, en `test`):** se agregó Stadia Alidade Smooth (gris claro, muy limpio). No lleva clave en la URL, pero **el dominio `navimaps.github.io` tiene que estar registrado en una cuenta de Stadia** (gratis para uso no comercial): en https://client.stadiamaps.com/ crear la cuenta, crear una "property" y agregar el dominio `navimaps.github.io`. Hasta que esté registrado, los mosaicos muestran "401 Error".
 
-35. **Más estilos (v24, 13/11/2026, en `test`):** se sumaron de Stadia **Outdoors**, **Terreno** (Stamen) y **Terreno sin nombres** (usan el dominio ya registrado en Stadia). **Thunderforest Transporte** y **Jawg Sunny** quedaron preparados pero necesitan una clave de cada servicio: se cargan en `CLAVES` al principio de `js/estilos.js` y recién ahí aparecen en el selector. Esas claves quedan visibles en la página: en el panel de cada servicio conviene limitarlas al dominio `navimaps.github.io`.
+35. **Más estilos (v24, 13/11/2026, en `test`):** se sumaron de Stadia **Outdoors**, **Terreno** (Stamen) y **Terreno sin nombres** (usan el dominio ya registrado en Stadia). Thunderforest y Jawg se descartaron porque piden una clave de cada servicio.
 
-**Estado actual:** versión `v24` en `test` (gestos de zoom, vidrio nuevo y estilos de mapa), `v17` en `main`. La carpeta local trabaja en la rama `test`.
+**Estado actual:** versión `v25` en `test` (gestos de zoom, vidrio nuevo y estilos de mapa), `v17` en `main`. La carpeta local trabaja en la rama `test`.
 
 ## Funciones actuales
 
 ### Mapa
-- **Estilos de mapa:** OSM, Relieve (OpenTopoMap), Suave, Outdoors, Terreno y Terreno sin nombres (Stadia, dominio registrado) y Satélite (Esri), más la capa de **señales náuticas** de OpenSeaMap. Transporte (Thunderforest) y Sunny (Jawg) aparecen cuando se carga su clave.
+- **Estilos de mapa:** OSM, Relieve (OpenTopoMap), Suave, Outdoors, Terreno y Terreno sin nombres (Stadia, dominio registrado) y Satélite (Esri), más la capa de **señales náuticas** de OpenSeaMap.
 - Arrastre, zoom con pellizco, doble toque para acercar y toque con dos dedos para alejar (los dos con animación suave).
 - **Rotación con dos dedos** con zona muerta de unos 15° (así el zoom no gira el mapa sin querer).
 - **Brújula** arriba a la derecha; al tocarla vuelve el norte arriba con animación.
@@ -119,7 +119,7 @@ App web tipo "Google Maps / Wavve" para navegar los ríos y arroyos del Delta de
 | `js/alturas.js` | Lee `alturas.json`; tendencia, estado, estación más cercana y gráfico |
 | `scripts/alturas.py` | Baja las alturas del INA y las mareas del SHN y arma `alturas.json` (lo corre GitHub cada 30 min) |
 | `zonas.json` | Zonas de práctica deportiva de la Prefectura (34 zonas, pasadas de los croquis) |
-| `js/estilos.js` | Estilos de mapa (de dónde sale cada uno, zoom máximo, atribución, claves) y capa de OpenSeaMap |
+| `js/estilos.js` | Estilos de mapa (de dónde sale cada uno, zoom máximo, atribución) y capa de OpenSeaMap |
 | `js/zonas.js` | Lee `zonas.json`, colores por deporte y qué zona se tocó |
 | `sw.js` | Service worker: guarda la app, los cauces y los mosaicos vistos para usarla sin señal |
 | `manifest.webmanifest` | Nombre, colores e íconos para instalarla en la pantalla de inicio |

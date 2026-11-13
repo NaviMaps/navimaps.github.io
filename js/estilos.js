@@ -3,15 +3,7 @@
 // - OSM, Relieve (OpenTopoMap) y Satélite (Esri): sin clave.
 // - Stadia (Suave, Outdoors, Terreno, Terreno sin nombres): sin clave en la URL, pero el dominio
 //   navimaps.github.io está registrado en la cuenta de Stadia (gratis, uso no comercial). Sin eso muestran "401 Error".
-// - Thunderforest y Jawg: necesitan una clave de cada servicio. Mientras CLAVES esté vacío, no aparecen en el selector.
-//   Las claves de mapas web quedan visibles en la página: en el panel de cada servicio conviene limitarlas
-//   al dominio navimaps.github.io.
 // CARTO dejó de andar sin clave; Esri Océano y National Geographic no tienen datos del Delta de cerca.
-
-export var CLAVES = {
-  thunderforest: '',  // https://manage.thunderforest.com/ → API Keys
-  jawg: ''            // https://www.jawg.io/lab/access-tokens
-};
 
 var E = 'https://server.arcgisonline.com/ArcGIS/rest/services/';
 function esri(srv) { return function (z, x, y) { return E + srv + '/MapServer/tile/' + z + '/' + y + '/' + x; }; }
@@ -28,16 +20,11 @@ export var ESTILOS = {
   outdoors: { n: 'Outdoors', max: 20, at: AT_STADIA, url: stadia('outdoors') },
   terreno: { n: 'Terreno', max: 18, at: AT_STAMEN, url: stadia('stamen_terrain') },
   terrenolimpio: { n: 'Terreno sin nombres', max: 18, at: AT_STAMEN, url: stadia('stamen_terrain_background') },
-  transporte: { n: 'Transporte', max: 22, at: 'Thunderforest · OpenStreetMap', clave: 'thunderforest',
-    url: function (z, x, y) { return 'https://tile.thunderforest.com/transport/' + z + '/' + x + '/' + y + '@2x.png?apikey=' + CLAVES.thunderforest; } },
-  sunny: { n: 'Sunny', max: 22, at: 'Jawg Maps · OpenStreetMap', clave: 'jawg',
-    url: function (z, x, y) { return 'https://tile.jawg.io/jawg-sunny/' + z + '/' + x + '/' + y + '@2x.png?access-token=' + CLAVES.jawg; } },
   sat: { n: 'Satélite', max: 19, at: 'Esri', url: esri('World_Imagery') }
 };
 
-// Orden en el selector de Capas (los que piden clave aparecen solo si la clave está cargada)
-export var ORDEN = ['osm', 'relieve', 'suave', 'outdoors', 'terreno', 'terrenolimpio', 'transporte', 'sunny', 'sat']
-  .filter(function (k) { return !ESTILOS[k].clave || CLAVES[ESTILOS[k].clave]; });
+// Orden en el selector de Capas
+export var ORDEN = ['osm', 'relieve', 'suave', 'outdoors', 'terreno', 'terrenolimpio', 'sat'];
 
 // Señales náuticas (boyas, balizas, faros, marinas) de OpenSeaMap: capa transparente encima del mapa
 export var SEAMARK = { min: 9, max: 18, at: 'OpenSeaMap',
