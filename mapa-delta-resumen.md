@@ -39,13 +39,15 @@ App web tipo "Google Maps / Wavve" para navegar los ríos y arroyos del Delta de
 
 28. **Todo pasa a `main` (13/11/2026):** alturas del río automáticas y zonas deportivas publicadas en https://navimaps.github.io/.
 
-**Estado actual:** versión `v17` en `main` y en `test`. La carpeta local trabaja en la rama `test`.
+29. **Gestos de zoom (v18, 13/11/2026, en `test`):** se sacaron los botones + y −. El doble toque con un dedo acerca con una animación suave (0,3 s) dejando fijo el punto tocado; el toque con dos dedos a la vez (sin moverlos) aleja un nivel, también animado, centrado entre los dedos. Si se toca el mapa durante la animación, se corta. El pellizco sigue igual.
+
+**Estado actual:** versión `v18` en `test` (gestos de zoom), `v17` en `main`. La carpeta local trabaja en la rama `test`.
 
 ## Funciones actuales
 
 ### Mapa
 - Mapa base de OpenStreetMap y **vista satelital** (Esri), con botón para alternar.
-- Arrastre, zoom con pellizco, doble toque y botones +/−.
+- Arrastre, zoom con pellizco, doble toque para acercar y toque con dos dedos para alejar (los dos con animación suave).
 - **Rotación con dos dedos** con zona muerta de unos 15° (así el zoom no gira el mapa sin querer).
 - **Brújula** arriba a la derecha; al tocarla vuelve el norte arriba con animación.
 - Escala del mapa en metros o km.

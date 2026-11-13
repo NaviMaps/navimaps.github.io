@@ -232,20 +232,31 @@ function App(){
   useEffect(function(){
     var c=cv.current,G={ptr:{},last:null,lastTap:0,pinch:null},v=V.current;
     function pos(e){var r=c.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}}
+    // Zoom animado alrededor de un punto de la pantalla (doble toque: acerca; toque con dos dedos: aleja)
+    function animZoom(sx,sy,dz){if(G.anim)cancelAnimationFrame(G.anim);var z0=v.z,t0=performance.now(),T=300;
+      function f(now){var k=Math.min(1,(now-t0)/T),e=1-Math.pow(1-k,3);zoomAt(sx,sy,z0+dz*e);if(k<1)G.anim=requestAnimationFrame(f);else{G.anim=0;save()}}
+      G.anim=requestAnimationFrame(f)}
     function size(){var r=c.getBoundingClientRect();c.width=r.width*dpr;c.height=r.height*dpr;req()}
-    function down(e){setSopen(false);if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();c.setPointerCapture(e.pointerId);G.ptr[e.pointerId]=pos(e);G.last={t:Date.now(),moved:0};G.pinch=null;G.acc=0;G.rot=false;
+    function down(e){setSopen(false);if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();c.setPointerCapture(e.pointerId);
+      if(G.anim){cancelAnimationFrame(G.anim);G.anim=0}
+      G.ptr[e.pointerId]=pos(e);var np0=Object.keys(G.ptr).length;
+      // Gesto: cuántos dedos llegó a tener, cuándo empezó y cuánto se movió (para reconocer el toque con dos dedos)
+      if(np0===1)G.gs={t:Date.now(),maxp:1,moved:0,mid:null};else if(G.gs){G.gs.maxp=Math.max(G.gs.maxp,np0);var pp=Object.keys(G.ptr).map(function(k){return G.ptr[k]});G.gs.mid={x:(pp[0].x+pp[1].x)/2,y:(pp[0].y+pp[1].y)/2}}
+      G.last={t:Date.now(),moved:np0>1?99:0};G.pinch=null;G.acc=0;G.rot=false;
       // Mantener apretado medio segundo sin mover: pone un pin ahí y pregunta el nombre
       clearTimeout(G.lp);var p0=G.ptr[e.pointerId];G.lp=Object.keys(G.ptr).length===1?setTimeout(function(){if(G.last&&G.last.moved<10&&Object.keys(G.ptr).length===1){G.last.moved=99;var g=toLL(p0.x,p0.y);setName('');setPin({lat:g.lat,lng:g.lng})}},500):0}
     function move(e){var p=G.ptr[e.pointerId];if(!p)return;var np=pos(e),ids=Object.keys(G.ptr);
       if(ids.length===2){G.ptr[e.pointerId]=np;var a=G.ptr[ids[0]],b=G.ptr[ids[1]],d=Math.hypot(a.x-b.x,a.y-b.y),mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
+        if(G.pinch&&G.gs)G.gs.moved+=Math.abs(d-G.pinch.d)+Math.hypot(mx-G.pinch.x,my-G.pinch.y);
         if(G.pinch){var ang=Math.atan2(b.y-a.y,b.x-a.x),da=ang-G.pinch.a;if(da>Math.PI)da-=2*Math.PI;if(da<-Math.PI)da+=2*Math.PI;
           G.acc=(G.acc||0)+da;if(!G.rot){if(Math.abs(G.acc)>0.26){G.rot=true;da=G.acc-(G.acc>0?0.26:-0.26)}else da=0}
           zoomAt(mx,my,v.z+Math.log2(d/G.pinch.d));v.r+=da;
           var cr=Math.cos(v.r),sr=Math.sin(v.r),sx=mx-G.pinch.x,sy=my-G.pinch.y,c1=px(v.lat,v.lng,v.z),q=ll(c1.x-(sx*cr+sy*sr),c1.y-(-sx*sr+sy*cr),v.z);v.lat=q.lat;v.lng=q.lng;req()}
         G.pinch={d:d,x:mx,y:my,a:Math.atan2(b.y-a.y,b.x-a.x)};if(G.last)G.last.moved=99;return}
-      var dx=np.x-p.x,dy=np.y-p.y;if(G.last)G.last.moved+=Math.abs(dx)+Math.abs(dy);if(G.last&&G.last.moved>=10)clearTimeout(G.lp);
+      var dx=np.x-p.x,dy=np.y-p.y;if(G.last)G.last.moved+=Math.abs(dx)+Math.abs(dy);if(G.gs)G.gs.moved+=Math.abs(dx)+Math.abs(dy);if(G.last&&G.last.moved>=10)clearTimeout(G.lp);
       var cr2=Math.cos(v.r),sr2=Math.sin(v.r),c2=px(v.lat,v.lng,v.z),q2=ll(c2.x-(dx*cr2+dy*sr2),c2.y-(-dx*sr2+dy*cr2),v.z);v.lat=Math.max(-85,Math.min(85,q2.lat));v.lng=q2.lng;G.ptr[e.pointerId]=np;req()}
     function up(e){var np=pos(e);clearTimeout(G.lp);delete G.ptr[e.pointerId];G.pinch=null;
+      if(!Object.keys(G.ptr).length&&G.gs&&G.gs.maxp===2&&Date.now()-G.gs.t<350&&G.gs.moved<14&&G.gs.mid){var m=G.gs.mid;G.gs=null;G.lastTap=0;animZoom(m.x,m.y,-1);return}
       if(!Object.keys(G.ptr).length){if(G.last&&G.last.moved<8&&Date.now()-G.last.t<300){var hit=tapMark(np);
         if(hit>=0){var hm=D.current.marks[hit];setName('');setPin({lat:hm.lat,lng:hm.lng,mi:hit});G.lastTap=0;save();return}
         var hr=tapRio(np);if(hr){setPin(null);setRio(hr.id);G.lastTap=0;save();return}
@@ -253,7 +264,7 @@ function App(){
         if(D.current.layers.zonas!==false&&v.z>=11){var hz=zonaEn(toLL(np.x,np.y),v.z);if(hz){setPin(null);setRio(null);setZn(hz);G.lastTap=0;save();return}}
         if(D.current.zn)setZn(null);
         if(D.current.pin&&(D.current.pin.mi!=null||D.current.pin.poi))setPin(null);
-        var n=Date.now();if(n-G.lastTap<320){zoomAt(np.x,np.y,v.z+1);G.lastTap=0}else G.lastTap=n}save()}}
+        var n=Date.now();if(n-G.lastTap<320){animZoom(np.x,np.y,1);G.lastTap=0}else G.lastTap=n}save()}}
     function ctxm(e){e.preventDefault()}
     function wheel(e){e.preventDefault();var p=pos(e);zoomAt(p.x,p.y,v.z-e.deltaY*0.002);save()}
     function vis(){if(document.visibilityState==='visible'){if(recR.current)wake()}else saveNow()}
@@ -390,7 +401,6 @@ function App(){
       say(sum||tr?('Importado: '+sum+' punto'+(sum===1?'':'s')+(tr?' y recorrido':'')):'No había nada nuevo para importar')
     }).catch(function(er){say(er.message||'No pude leer el archivo')})}
   function del(i){setMarks(marks.filter(function(_,j){return j!==i}))}
-  function step(d){zoomAt(cv.current.clientWidth/2,cv.current.clientHeight/2,Math.round(V.current.z)+d);save()}
 
   function toggleSat(){satR.current=!satR.current;setSat(satR.current);req()}
   useEffect(function(){
@@ -420,8 +430,6 @@ function App(){
     <canvas ref=${cv}></canvas>
     <div className="hud">${ES_TEST?html`<small style=${{background:'#d9480f',color:'#fff',fontWeight:700,borderRadius:6,padding:'1px 6px',alignSelf:'flex-start'}}>PRUEBA</small>`:null}<b>${spd} nd</b><small>${dst}</small><div className="scale" ref=${sc}></div><small ref=${scl}></small>${wx&&layers.wx?html`<small>Viento ${Math.round(wx.wind_speed_10m)} nd ${DIRS[Math.round(wx.wind_direction_10m/45)%8]} · ráf. ${Math.round(wx.wind_gusts_10m)}</small><small>${Math.round(wx.temperature_2m)} °C</small>`:null}${rioH?html`<button className="rioh" onClick=${function(){setRio(rioH.e.id)}}>🌊 ${rioH.e.n.split(' (')[0]} <b>${metros(rioH.u.v)}</b> ${tendencia(rioH.e)}</button>`:null}${shnAviso?html`<button className="rioh" style=${{color:'#c92a2a',fontWeight:700}} onClick=${function(){setRio((rioH&&rioH.e.id)||52)}}>⚠ Aviso del SHN</button>`:null}${online?null:html`<small style=${{color:'var(--danger)',fontWeight:600}}>Sin señal</small>`}<small>© ${sat?'Esri':'OpenStreetMap'}</small></div>
     <div className="fabs">
-      <button className="fab" aria-label="Acercar" onClick=${function(){step(1)}}>+</button>
-      <button className="fab" aria-label="Alejar" onClick=${function(){step(-1)}}>−</button>
       <button className="fab" aria-label="Mi posición" onClick=${locate}>◎</button>
       <button className="fab" aria-label="Satélite" onClick=${toggleSat}>${sat?'🗺':'🛰'}</button>
       <button className=${'fab'+(rec?' recon':'')} aria-label=${rec?'Detener recorrido':'Grabar recorrido'} onClick=${function(){recOn(!rec)}}>${rec?html`<i className="sq"></i>`:html`<i className="dot"></i>`}</button>
