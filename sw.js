@@ -1,7 +1,7 @@
 // Service worker de NaviMaps: guarda la app, los cauces y los mosaicos
 // que ya viste para que funcione sin señal.
 // Al cambiar cualquier archivo de la app (index.html, js/, cauces.json), subí el número de VERSION.
-var VERSION = 'v12';
+var VERSION = 'v13';
 // La versión real (/) y la de prueba (/test/) comparten sitio:
 // el nombre de la caché lleva la carpeta para que una no borre la de la otra.
 var SCOPE = new URL(self.registration.scope).pathname;
@@ -18,6 +18,7 @@ var PRECACHE = [
   './js/ruta.js',
   './js/datos.js',
   './js/respaldo.js',
+  './js/alturas.js',
   './cauces.json',
   './lugares.json',
   './manifest.webmanifest',
@@ -92,6 +93,15 @@ self.addEventListener('fetch', function (e) {
     }).catch(function () {
       return caches.match('./index.html', { ignoreSearch: true });
     }));
+    return;
+  }
+
+  // Alturas del río: cambian cada 30 minutos, así que primero la red y, sin señal, la última copia guardada
+  if (u.origin === self.location.origin && /\/alturas\.json$/.test(u.pathname)) {
+    e.respondWith(fetch(req).then(function (r) {
+      if (r.ok) { var cp = r.clone(); caches.open(APP).then(function (c) { c.put(req, cp); }); }
+      return r;
+    }).catch(function () { return caches.match(req, { ignoreSearch: true }); }));
     return;
   }
 

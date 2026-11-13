@@ -5,6 +5,7 @@ import { PREFS, solve } from './ruta.js';
 import { CATS, ovp, local, waterEls, parseRes, dTo, lugares, lugaresFecha } from './datos.js';
 import { PRE, ES_TEST } from './entorno.js';
 import { exportar, leer, unirPuntos } from './respaldo.js';
+import { alturas, ultimo, fresca, tendencia, estado, hace, metros, hora, dia, cercana, mareas, grafico } from './alturas.js';
 
 var useState = React.useState, useEffect = React.useEffect, useRef = React.useRef;
 var html = htm.bind(React.createElement);
@@ -73,6 +74,10 @@ function App(){
   var _pf=useState(function(){try{var x=parseInt(localStorage.getItem(PRE+'delta_pref'),10);return x>=0&&x<=2?x:2}catch(e){return 2}}),pref=_pf[0],setPref=_pf[1];
   var _lc=useState(local()?local().length:0),lc=_lc[0],setLc=_lc[1];
   var _lg=useState(lugares()?lugares().length:0),lgc=_lg[0],setLgc=_lg[1];
+  // Alturas del río: rv cambia cuando llega un alturas.json nuevo; rio es la estación abierta en el panel
+  var _rv=useState(0),rv=_rv[0],setRv=_rv[1];
+  var _ri=useState(null),rio=_ri[0],setRio=_ri[1];
+  useEffect(function(){function f(){setRv(function(x){return x+1});req()}window.addEventListener('delta-alturas',f);if(alturas())f();return function(){window.removeEventListener('delta-alturas',f)}},[]);
   useEffect(function(){function f(){setLgc(lugares()?lugares().length:0);req()}window.addEventListener('delta-lugares',f);f();return function(){window.removeEventListener('delta-lugares',f)}},[]);
   useEffect(function(){function f(){setLc(local()?local().length:0)}window.addEventListener('delta-local',f);f();return function(){window.removeEventListener('delta-local',f)}},[]);
   function setPrefP(i){setPref(i);try{localStorage.setItem(PRE+'delta_pref',String(i))}catch(e){}}
@@ -84,10 +89,10 @@ function App(){
     window.addEventListener('online',on);window.addEventListener('offline',off);
     return function(){window.removeEventListener('online',on);window.removeEventListener('offline',off)}},[]);
 
-  var drawnPois=useRef([]);
+  var drawnPois=useRef([]),drawnRio=useRef([]);
   var cv=useRef(null),sc=useRef(null),scl=useRef(null),raf=useRef(0),tiles=useRef({}),drawRef=useRef(null);
   var D=useRef({}),wid=useRef(null),first=useRef(true),lock=useRef(null),trk=useRef(track),kmR=useRef(0),recR=useRef(false),tt=useRef(0),saveT=useRef(0),fr=useRef(0);
-  D.current={pin:pin,marks:marks,track:track,me:me,dest:dest,route:route,layers:layers,orig:orig,res:res,sel:sel,cruise:cruise};
+  D.current={rio:rio,pin:pin,marks:marks,track:track,me:me,dest:dest,route:route,layers:layers,orig:orig,res:res,sel:sel,cruise:cruise};
 
   // Guarda todo en el celular. save() junta varios cambios en una sola escritura:
   // normalmente espera 0,4 s; mientras grabás, escribe como mucho cada 15 s (el recorrido puede ser largo).
@@ -156,6 +161,17 @@ function App(){
         ctx.restore()});
       ctx.textAlign='start';ctx.textBaseline='alphabetic'}
     drawnPois.current=drawn;
+    // Estaciones de altura del río: cartelito con el último valor (color según el estado), desde zoom 10
+    var AL=alturas(),dRio=[];
+    if(AL&&d.layers.rio!==false&&v.z>=10){ctx.textBaseline='middle';ctx.textAlign='center';ctx.font='700 11px system-ui';
+      AL.estaciones.forEach(function(e){var u=ultimo(e);if(e.lat==null||!u)return;var q=P(e);if(q.x<-ex-30||q.x>w+ex+30||q.y<-ey-20||q.y>h+ey+20)return;
+        var st=estado(e,u.v),txt='🌊 '+u.v.toFixed(1).replace('.',',')+(fresca(e)?'':' ·'),tw=ctx.measureText(txt).width+12,on=d.rio===e.id;
+        ctx.save();ctx.translate(q.x,q.y);ctx.rotate(-v.r);ctx.globalAlpha=fresca(e)?1:.7;
+        ctx.fillStyle='rgba(255,255,255,.95)';ctx.strokeStyle=st.c.indexOf('var(')===0?'#888':st.c;ctx.lineWidth=on?3:2;
+        ctx.beginPath();if(ctx.roundRect)ctx.roundRect(-tw/2,-10,tw,20,10);else ctx.rect(-tw/2,-10,tw,20);ctx.fill();ctx.stroke();
+        ctx.fillStyle='#0b3d4a';ctx.fillText(txt,0,1);ctx.restore();dRio.push(e)});
+      ctx.textAlign='start';ctx.textBaseline='alphabetic'}
+    drawnRio.current=dRio;
     (d.layers.marks?d.marks:[]).forEach(function(m){var q=P(m);ctx.fillStyle=C.danger;ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.beginPath();ctx.arc(q.x,q.y,8,0,7);ctx.fill();ctx.stroke();
       ctx.font='600 13px system-ui';ctx.lineWidth=3;ctx.strokeStyle=C.bg;ctx.save();ctx.translate(q.x,q.y);ctx.rotate(-v.r);ctx.strokeText(m.name,12,5);ctx.fillStyle=C.fg;ctx.fillText(m.name,12,5);ctx.restore()});
     if(d.dest&&d.layers.route){var dq=P(d.dest);if(d.route&&d.route.ok){var sp=d.route.pts.map(P),cum=[0],tot=0;
@@ -196,6 +212,8 @@ function App(){
   function tapPoi(sp){var d=D.current,L=drawnPois.current,v=V.current;if(!L||!L.length||d.layers.pois===false||v.z<13)return null;
     var g=toLL(sp.x,sp.y),t=px(g.lat,g.lng,v.z),best=null,bd=22;
     L.forEach(function(x){var q=px(x.lat,x.lng,v.z),dd=Math.hypot(q.x-t.x,q.y-t.y);if(dd<bd){bd=dd;best=x}});return best}
+  function tapRio(sp){var L=drawnRio.current,v=V.current;if(!L.length)return null;var g=toLL(sp.x,sp.y),t=px(g.lat,g.lng,v.z),best=null,bd=26;
+    L.forEach(function(e){var q=px(e.lat,e.lng,v.z),dd=Math.hypot(q.x-t.x,q.y-t.y);if(dd<bd){bd=dd;best=e}});return best}
   function tapMark(sp){var d=D.current;if(!d.layers.marks)return -1;var v=V.current,g=toLL(sp.x,sp.y),t=px(g.lat,g.lng,v.z),best=-1,bd=24;
     d.marks.forEach(function(m,i){var q=px(m.lat,m.lng,v.z),dd=Math.hypot(q.x-t.x,q.y-t.y);if(dd<bd){bd=dd;best=i}});return best}
   useEffect(function(){
@@ -217,6 +235,7 @@ function App(){
     function up(e){var np=pos(e);clearTimeout(G.lp);delete G.ptr[e.pointerId];G.pinch=null;
       if(!Object.keys(G.ptr).length){if(G.last&&G.last.moved<8&&Date.now()-G.last.t<300){var hit=tapMark(np);
         if(hit>=0){var hm=D.current.marks[hit];setName('');setPin({lat:hm.lat,lng:hm.lng,mi:hit});G.lastTap=0;save();return}
+        var hr=tapRio(np);if(hr){setPin(null);setRio(hr.id);G.lastTap=0;save();return}
         var hp=tapPoi(np);if(hp){setName('');setPin({lat:hp.lat,lng:hp.lng,poi:hp});G.lastTap=0;save();return}
         if(D.current.pin&&(D.current.pin.mi!=null||D.current.pin.poi))setPin(null);
         var n=Date.now();if(n-G.lastTap<320){zoomAt(np.x,np.y,v.z+1);G.lastTap=0}else G.lastTap=n}save()}}
@@ -232,7 +251,7 @@ function App(){
   },[]);
 
   useEffect(function(){req();save()},[marks,track,me,dest,route,layers,orig,res,sel,cruise,sat]);
-  useEffect(req,[pin]);
+  useEffect(req,[pin,rio,rv]);
 
   function wake(){try{if(navigator.wakeLock)navigator.wakeLock.request('screen').then(function(l){lock.current=l}).catch(function(){})}catch(e){}}
   function startGPS(){
@@ -368,6 +387,10 @@ function App(){
   },[]);
 
   var from=orig||me;
+  // Altura del río más cercana (a vos o al centro del mapa) para el recuadro de arriba
+  var AL=alturas(),rioE=AL?cercana(me||{lat:V.current.lat,lng:V.current.lng}):null,rioU=rioE?ultimo(rioE):null;
+  var rioH=rioE&&rioU?{e:rioE,u:rioU}:null,shnAviso=AL&&AL.shn&&AL.shn.aviso;
+  var rioSel=AL&&rio!=null?AL.estaciones.filter(function(e){return e.id===rio})[0]:null;
   var rk=(route&&route.ok)?route.km:(from&&dest?dist(from,dest):0);
   var sref=me||{lat:V.current.lat,lng:V.current.lng};
   // Puntos guardados que coinciden con lo escrito (sin tildes). Con el buscador vacío, los 5 más cercanos.
@@ -380,7 +403,7 @@ function App(){
 
   return html`<div id="app">
     <canvas ref=${cv}></canvas>
-    <div className="hud">${ES_TEST?html`<small style=${{background:'#d9480f',color:'#fff',fontWeight:700,borderRadius:6,padding:'1px 6px',alignSelf:'flex-start'}}>PRUEBA</small>`:null}<b>${spd} nd</b><small>${dst}</small><div className="scale" ref=${sc}></div><small ref=${scl}></small>${wx&&layers.wx?html`<small>Viento ${Math.round(wx.wind_speed_10m)} nd ${DIRS[Math.round(wx.wind_direction_10m/45)%8]} · ráf. ${Math.round(wx.wind_gusts_10m)}</small><small>${Math.round(wx.temperature_2m)} °C</small>`:null}${online?null:html`<small style=${{color:'var(--danger)',fontWeight:600}}>Sin señal</small>`}<small>© ${sat?'Esri':'OpenStreetMap'}</small></div>
+    <div className="hud">${ES_TEST?html`<small style=${{background:'#d9480f',color:'#fff',fontWeight:700,borderRadius:6,padding:'1px 6px',alignSelf:'flex-start'}}>PRUEBA</small>`:null}<b>${spd} nd</b><small>${dst}</small><div className="scale" ref=${sc}></div><small ref=${scl}></small>${wx&&layers.wx?html`<small>Viento ${Math.round(wx.wind_speed_10m)} nd ${DIRS[Math.round(wx.wind_direction_10m/45)%8]} · ráf. ${Math.round(wx.wind_gusts_10m)}</small><small>${Math.round(wx.temperature_2m)} °C</small>`:null}${rioH?html`<button className="rioh" onClick=${function(){setRio(rioH.e.id)}}>🌊 ${rioH.e.n.split(' (')[0]} <b>${metros(rioH.u.v)}</b> ${tendencia(rioH.e)}</button>`:null}${shnAviso?html`<button className="rioh" style=${{color:'#c92a2a',fontWeight:700}} onClick=${function(){setRio((rioH&&rioH.e.id)||52)}}>⚠ Aviso del SHN</button>`:null}${online?null:html`<small style=${{color:'var(--danger)',fontWeight:600}}>Sin señal</small>`}<small>© ${sat?'Esri':'OpenStreetMap'}</small></div>
     <div className="fabs">
       <button className="fab" aria-label="Acercar" onClick=${function(){step(1)}}>+</button>
       <button className="fab" aria-label="Alejar" onClick=${function(){step(-1)}}>−</button>
@@ -435,6 +458,7 @@ function App(){
             <div className="lr"><span>Destino y ruta</span>${sw(layers.route,function(){setLayer('route')})}</div>
             <div className="lr"><span>Viento y clima</span>${sw(layers.wx,function(){setLayer('wx')})}</div>
             <div className="lr"><span>Vista satelital</span>${sw(sat,toggleSat)}</div>
+            <div className="lr"><span>Alturas del río</span>${sw(layers.rio!==false,function(){var n=Object.assign({},layers);n.rio=layers.rio===false;setLayers(n)})}</div>
           </div>`
         :tab==='historial'?html`<div>${hist.length?hist.map(function(h){return html`<div className="mi" key=${h}><span onClick=${function(){setMenu(false);runSearch(h)}}>🔍 ${h}</span></div>`}):html`<div className="empty">Todavía no hiciste búsquedas.</div>`}
             ${hist.length?html`<div className="lr"><span>Borrar historial</span><button className="mini" style=${{color:'var(--danger)'}} onClick=${function(){setHist([]);try{localStorage.removeItem(PRE+'delta_hist')}catch(e){}}}>Borrar</button></div>`:null}</div>`
@@ -456,6 +480,22 @@ function App(){
           </div>`}
       </div>
     </div>
+    ${rioSel?(function(e){var u=ultimo(e),st=estado(e,u&&u.v),mr=e.id===52?mareas():[],sh=AL.shn,g=grafico(html,e,340,150);
+      var fut=e.fc.filter(function(o){return o.t>Date.now()}),mx=fut.reduce(function(a,o){return !a||o.v>a.v?o:a},null),mn=fut.reduce(function(a,o){return !a||o.v<a.v?o:a},null);
+      return html`<div id="riocard">
+      <div className="row" style=${{alignItems:'center'}}><div style=${{flex:1}}><b style=${{fontSize:'18px'}}>🌊 ${e.n}</b>
+        <small style=${{color:'var(--muted)',display:'block'}}>${me&&e.lat!=null?'A '+dist(me,e).toFixed(1)+' km · ':''}Fuente: ${e.fuente==='PNA'?'Prefectura (escala)':e.fuente}</small></div>
+        <button className="clr" aria-label="Cerrar" onClick=${function(){setRio(null)}}>✕</button></div>
+      <div className="chips rioest">${AL.estaciones.filter(function(x){return x.obs.length}).map(function(x){return html`<button key=${x.id} className=${'mini'+(x.id===e.id?' on':'')} onClick=${function(){setRio(x.id)}}>${x.n.split(' (')[0]}</button>`})}</div>
+      ${u?html`<div className="riobig"><b>${metros(u.v)}</b> <span>${tendencia(e)}</span> <i style=${{background:st.c}}>${st.n}</i></div>
+        <small style=${{color:'var(--muted)'}}>Medido ${hace(u.t)} (${dia(u.t)} ${hora(u.t)})${fresca(e)?'':' · esta escala se lee una vez por día'}</small>`:html`<div className="empty">Sin mediciones recientes.</div>`}
+      ${g?html`<div className="riog">${g}<small style=${{color:'var(--muted)'}}>${e.fc.length?html`Línea llena: medido · punteada: pronóstico del INA (${dia(new Date(e.fc_fecha))} ${hora(new Date(e.fc_fecha))})`:'Últimas 24 horas medidas · sin pronóstico para esta estación'}</small></div>`:null}
+      ${mx&&mn?html`<div className="lr"><span>Pronóstico próximos días</span><small>máx. <b>${metros(mx.v)}</b> ${dia(mx.t)} ${hora(mx.t)} · mín. <b>${metros(mn.v)}</b> ${dia(mn.t)} ${hora(mn.t)}</small></div>`:null}
+      ${mr.length?html`<div><div className="srh" style=${{paddingTop:'6px'}}><b>Mareas en San Fernando (SHN)</b></div>${mr.map(function(m){return html`<div className="lr" key=${m.t.getTime()}><span>${m.tipo==='pleamar'?'▲ Pleamar':'▼ Bajamar'}</span><small><b>${metros(m.h)}</b> · ${dia(m.t)} ${hora(m.t)}</small></div>`})}
+        ${sh&&sh.correccion?html`<small style=${{color:'var(--muted)',display:'block',paddingTop:'4px'}}>Corrección por viento: ${sh.correccion.charAt(0)+sh.correccion.slice(1).toLowerCase()}</small>`:null}</div>`:null}
+      ${sh&&sh.aviso?html`<div className="rioaviso"><b>⚠ Aviso del SHN</b><small>${sh.aviso}</small></div>`:null}
+      <small style=${{color:'var(--muted)'}}>Altura sobre el cero de la escala: no es la profundidad del lugar.${e.alerta!=null?' Alerta desde '+metros(e.alerta)+'.':''}${e.bajas!=null?' Aguas bajas hasta '+metros(e.bajas)+'.':''} Datos: INA y SHN, actualizados ${hace(new Date(AL.actualizado))}.</small>
+    </div>`})(rioSel):null}
     ${pin&&pin.mi!=null&&marks[pin.mi]?html`<div id="pincard">
       <div className="row" style=${{alignItems:'center'}}><div style=${{flex:1}}><b style=${{fontSize:'18px'}}>${marks[pin.mi].name}</b>
         <small style=${{color:'var(--muted)',display:'block'}}>Punto guardado${me?' · a '+(dist(me,pin)/1.852).toFixed(1)+' mn ('+dist(me,pin).toFixed(1)+' km)':''}</small></div>

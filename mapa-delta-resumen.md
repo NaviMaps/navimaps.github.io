@@ -29,7 +29,9 @@ App web tipo "Google Maps / Wavve" para navegar los ríos y arroyos del Delta de
 22. **Lugares reales y menos amontonados (v12, 13/11/2026):** se subió `lugares.json` (2.387 lugares del Delta, 165 KB, bajado el 12/11 con el script). Para que no se amontonen en Tigre: en zoom 13 y 14 solo se ven ⛽ combustible y ⚓ marinas y muelles; desde zoom 15, todos. Si dos íconos o dos nombres se pisan, se dibuja uno solo (combustible y marinas tienen prioridad). Se agregó el tipo "Mercado".
 23. **Todo pasa a `main` (13/11/2026):** las versiones v5 a v12 quedan publicadas en https://navimaps.github.io/.
 
-**Estado actual:** versión `v12` en `main` y en `test`. La carpeta local trabaja en la rama `test`.
+24. **Alturas del río y mareas (v13, 13/11/2026, en `test`):** datos del INA (alturas medidas y pronóstico) y del SHN (pleamares, bajamares y avisos), actualizados solos cada 30 minutos por GitHub Actions. Ver "Alturas del río y mareas (cómo funciona)".
+
+**Estado actual:** versión `v13` en `test` (alturas del río), `v12` en `main`. La carpeta local trabaja en la rama `test`.
 
 ## Funciones actuales
 
@@ -92,6 +94,8 @@ App web tipo "Google Maps / Wavve" para navegar los ríos y arroyos del Delta de
 | `lugares.json` | Lugares del Delta (combustible, restaurantes, marinas…) bajados de OpenStreetMap |
 | `descargar-lugares.ps1` | Script de PowerShell que baja los lugares del Delta en 6 partes (como el de los cauces) y arma `lugares.json` |
 | `descargar-cauces.ps1` | Script de PowerShell que baja el Delta en 6 partes y arma `cauces.json` |
+| `js/alturas.js` | Lee `alturas.json`; tendencia, estado, estación más cercana y gráfico |
+| `scripts/alturas.py` | Baja las alturas del INA y las mareas del SHN y arma `alturas.json` (lo corre GitHub cada 30 min) |
 | `sw.js` | Service worker: guarda la app, los cauces y los mosaicos vistos para usarla sin señal |
 | `manifest.webmanifest` | Nombre, colores e íconos para instalarla en la pantalla de inicio |
 | `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | Íconos de la app |
@@ -178,7 +182,7 @@ Los cambios 15 a 21 (v5 a v11) se hicieron desde Claude Code en la nube (claude.
 
 ## Próximos pasos posibles
 
-- **Altura del río y mareas** (siguiente tarea, ver el plan en "Plan: altura del río y mareas").
+- Actualizar `cauces.json` y `lugares.json` solos una vez por mes con GitHub Actions (como las alturas).
 - Exportar el recorrido también en **GPX** para abrirlo en otras apps náuticas.
 - Recuperar los datos de la dirección vieja: volver a publicar un rato `iangiribaldi.github.io/Maps-nautico/` con la v5, exportar desde ahí e importar en NaviMaps.
 - Ordenar `js/app.js` en partes más chicas (mapa, gestos, panel, menú) con nombres de variables legibles.
@@ -189,34 +193,47 @@ Los cambios 15 a 21 (v5 a v11) se hicieron desde Claude Code en la nube (claude.
 - Evaluar más adelante una **app nativa** o empaquetarla con Capacitor.
 - Cambiar a un proveedor de mapas con plan gratuito (por ejemplo MapTiler) para uso más intensivo.
 
-## Plan: altura del río y mareas (para retomar)
+## Alturas del río y mareas (cómo funciona)
 
-Investigado el 13/11/2026; queda para la próxima sesión.
+Hecho el 13/11/2026 (v13). Todo es automático: no hay que correr nada a mano.
 
 ### De dónde salen los datos
-- **SHN (Servicio de Hidrografía Naval):** altura del Río de la Plata medida y pronosticada en sus estaciones (San Fernando, Buenos Aires, etc.), avisos de crecida por sudestada y tabla de mareas.
-  - Alturas y pronóstico del Río de la Plata: https://www.hidro.gov.ar/oceanografia/AACRIOPLA.asp
-  - Modelos y pronósticos: https://www.hidro.gov.ar/ModelosPronosticos.asp
-  - Datos abiertos (estaciones mareográficas): https://datos.gob.ar/el/dataset/shn-estaciones-mareograficas y https://www.hidro.gov.ar/DA/DatosAbiertos.asp
-- **INA (Instituto Nacional del Agua):** reporte diario del "frente del Delta" (San Fernando sobre el Luján y otras estaciones), con pronóstico a varios días y niveles de alerta (aguas altas = valores que se igualan o superan en el 5 % o menos de los registros).
-  - Sistema de alerta y series: https://alerta.ina.gob.ar/a5/secciones
-  - Previsiones numéricas del Delta: https://ina.gob.ar/alerta/index.php?seccion=10
-  - Reportes diarios en PDF: `https://alerta.ina.gob.ar/ina/06-INFORMES/diario/pdf/reporte_diario_AAAA-MM-DD.pdf` (copia en hidraulica.gob.ar)
-  - Los pronósticos del Paraná medio se actualizan martes y viernes; los del Uruguay, lunes, miércoles y viernes.
+- **INA (Instituto Nacional del Agua)**, API pública sin usuario: `https://alerta.ina.gob.ar/a5`.
+  - Alturas medidas: `/obs/puntual/series/{id}/observaciones?timestart=...&timeend=...&format=json`.
+  - Datos de la estación y qué pronóstico tiene: `/obs/puntual/series?id={id}&format=json` (campo `pronosticos`: `cal_id` y `series_id`).
+  - Pronóstico hora por hora: `/sim/calibrados/{cal_id}/corridas/last?series_id={id}&includeProno=true&qualifier=main&format=json`.
+  - Niveles de cada estación: alerta, evacuación y aguas bajas.
+- **SHN (Servicio de Hidrografía Naval)**, páginas web (no tiene API):
+  - Pleamares y bajamares corregidas por viento para San Fernando: https://www.hidro.gov.ar/oceanografia/pronostico.asp
+  - Avisos y alertas de crecida o bajante: https://www.hidro.gov.ar/oceanografia/AACRIOPLA.asp
+  - El gráfico de mareógrafos del SHN es solo una imagen, por eso las alturas medidas salen del INA.
 
-### Problema técnico
-La app es una página en el celular: el navegador no puede leer esos sitios directamente (no lo permiten desde otra página y no tienen un formato estable para programas).
+### Estaciones
+San Fernando, Tigre, Arroyo Carapachay, Canal Seoane, Paraná Miní, Chaná Miní, Carabelas, INTA Delta (Paraná de las Palmas), Escobar, Dique Luján, Campana, Zárate, Brazo Largo (Paraná Guazú), Guazucito, Canal Nuevo, Nueva Palmira, San Isidro y Buenos Aires. Se cambian en la lista `ESTACIONES` de `scripts/alturas.py` (el número es el id de la serie de alturas en el INA).
+- Con medición cada hora: San Fernando, Carapachay, Canal Seoane, Paraná Miní, Carabelas, INTA Delta, Zárate, Brazo Largo, Nueva Palmira y Buenos Aires.
+- Las escalas de Prefectura (Tigre, Escobar, Chaná Miní, etc.) se leen una vez por día.
+- Con pronóstico del INA (hasta 3 o 4 días): San Fernando, Carabelas, INTA Delta, Campana, Zárate, Brazo Largo y Nueva Palmira.
 
-### Cómo hacerlo
-1. **Tarea automática de GitHub Actions** (como la que publica la app) que corre cada 30 a 60 minutos, entra al SHN y al INA, saca las alturas de las estaciones del Delta y las guarda en **`alturas.json`** junto a la app.
-2. **La app lee `alturas.json`** como lee `cauces.json`; sin señal muestra el último dato guardado.
-3. **En el mapa:** algo como "San Fernando 1,45 m ↑ · próxima pleamar 23:10 (2,10 m)", aviso si viene una crecida o una bajante fuerte y, al tocarlo, un gráfico de las últimas horas y el pronóstico.
+### Cómo funciona
+1. **`scripts/alturas.py`** (Python sin librerías extra) baja todo y arma **`alturas.json`** (unos 35 KB). Si una fuente falla, conserva lo que había en la versión publicada.
+2. **`.github/workflows/publicar.yml`** corre solo **cada 30 minutos** (minutos 7 y 37 de cada hora), además de cada vez que se sube algo. Arma `alturas.json` y lo publica junto con la app (en la raíz y en `/test/`). **No se guarda en el repositorio**, así no se llena de commits. La tarea programada corre con la versión de `main`.
+3. **`js/alturas.js`** lee `alturas.json` al abrir la app, cada 10 minutos y al volver a la app. Sin señal usa la última copia guardada (`sw.js` la pide primero a la red).
+
+### Qué se ve en la app
+- En el recuadro de arriba a la izquierda: la estación más cercana (a vos o al centro del mapa), con su altura y si sube (↑), baja (↓) o está quieta (→). Si hay un aviso del SHN, aparece "⚠ Aviso del SHN" en rojo.
+- En el mapa, desde zoom 10: un cartelito 🌊 con la altura de cada estación, con el borde de color según el estado (verde normal, naranja alerta, rojo evacuación, amarillo aguas bajas). Las de lectura diaria se ven más claras.
+- Al tocar el recuadro o un cartelito se abre un panel con:
+  - Altura actual, estado y hace cuánto se midió.
+  - Botones para cambiar de estación.
+  - Gráfico con las últimas 24 h medidas y el pronóstico, con las líneas de alerta y aguas bajas.
+  - Máximo y mínimo pronosticados.
+  - En San Fernando, las próximas pleamares y bajamares del SHN y la corrección por viento.
+  - El aviso del SHN, si hay.
+- Capa "Alturas del río" en ☰ › Capas.
 
 ### A tener en cuenta
-- Es la **altura del río respecto de un cero de referencia** de cada estación, **no la profundidad** en un lugar: dice si el agua está alta o baja respecto de lo normal, no el calado de un arroyo.
-- En el Río de la Plata manda más el **viento** (sudestada, viento norte) que la marea astronómica: conviene el pronóstico del SHN, que lo incluye, y no solo la tabla de mareas.
-- Sacar datos de páginas web es frágil: si el SHN o el INA cambian su página, hay que ajustar el programa.
-- GitHub no garantiza la hora exacta de las tareas automáticas (a veces corren con atraso): sirve para esto, pero no es tiempo real al minuto.
-
-### Primer paso al retomar
-Habilitar en el entorno de Claude Code ("navimaps.github.io") el acceso a `hidro.gov.ar` y `alerta.ina.gob.ar` (hoy solo tiene los servidores de OpenStreetMap), ver exactamente cómo publican los datos y elegir la fuente más estable. Después, la tarea automática y la parte de la app.
+- Es la **altura sobre el cero de la escala, no la profundidad** del lugar.
+- En el Río de la Plata manda más el **viento** (sudestada, viento norte) que la marea astronómica: por eso se usan el pronóstico del INA y la corrección del SHN.
+- Si el SHN o el INA cambian sus páginas o su API, `alturas.py` deja de traer esa parte. La app muestra hace cuánto es el dato, y GitHub manda un mail cuando una tarea falla.
+- GitHub puede correr las tareas programadas con atraso, y **las desactiva si el repositorio pasa 60 días sin cambios**. Si pasa, se reactivan en GitHub › Actions › Publicar › Enable workflow.
+- Para probar el script en la compu: `python3 scripts/alturas.py alturas.json` (Windows: `py scripts\alturas.py alturas.json`).

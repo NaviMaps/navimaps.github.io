@@ -29,7 +29,7 @@ input{flex:1;min-width:0;min-height:46px;padding:0 12px;border-radius:12px;borde
 .empty{color:var(--muted);font-size:14px;padding:6px 0}
 
 /* Vidrio esmerilado */
-.hud,.fab,#sheet,#pincard,#menu,.sb,#sr{background:var(--glass);-webkit-backdrop-filter:blur(22px) saturate(180%);backdrop-filter:blur(22px) saturate(180%);border:1px solid rgba(255,255,255,.3)}
+.hud,.fab,#sheet,#pincard,#riocard,#menu,.sb,#sr{background:var(--glass);-webkit-backdrop-filter:blur(22px) saturate(180%);backdrop-filter:blur(22px) saturate(180%);border:1px solid rgba(255,255,255,.3)}
 
 /* ---------- Mapa: mira, datos y botones flotantes ---------- */
 .hud{position:absolute;left:10px;top:68px;border-radius:12px;padding:8px 12px;box-shadow:0 2px 8px rgba(0,0,0,.2);display:flex;flex-direction:column;gap:4px;min-width:96px}
@@ -45,6 +45,18 @@ input{flex:1;min-width:0;min-height:46px;padding:0 12px;border-radius:12px;borde
 @keyframes latido{50%{box-shadow:0 0 0 8px rgba(229,72,77,.25)}}
 #pincard{position:absolute;left:10px;right:10px;bottom:calc(14px + env(safe-area-inset-bottom));border-radius:18px;padding:10px 12px 12px;box-shadow:0 4px 18px rgba(0,0,0,.3);display:flex;flex-direction:column;gap:10px;z-index:3;animation:sube .3s cubic-bezier(.2,.8,.2,1)}
 @keyframes sube{from{opacity:0;transform:translateY(20px)}}
+#riocard>*{flex:none}
+.rioh{border:none;background:none;padding:2px 0;margin:0;text-align:left;font:inherit;font-size:12px;color:var(--fg);cursor:pointer}
+.hud .rioh b{font-size:12px;font-variant-numeric:tabular-nums}
+#riocard{position:absolute;left:10px;right:10px;bottom:calc(14px + env(safe-area-inset-bottom));max-height:72%;overflow-y:auto;-webkit-overflow-scrolling:touch;border-radius:18px;padding:10px 12px 12px;box-shadow:0 4px 18px rgba(0,0,0,.3);display:flex;flex-direction:column;gap:8px;z-index:4;animation:sube .3s cubic-bezier(.2,.8,.2,1)}
+.chips.rioest{flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch}
+.rioest .mini{flex:none;min-height:34px;padding:0 10px;font-size:13px}
+.riobig{display:flex;align-items:center;gap:8px}
+.riobig b{font-size:30px;font-variant-numeric:tabular-nums}
+.riobig span{font-size:24px}
+.riobig i{font-style:normal;color:#fff;font-size:12px;font-weight:700;padding:3px 8px;border-radius:10px}
+.riog{background:var(--bg);border-radius:12px;padding:6px 4px 4px}
+.rioaviso{background:rgba(201,42,42,.12);border:1px solid rgba(201,42,42,.4);border-radius:12px;padding:8px 10px;display:flex;flex-direction:column;gap:4px}
 .burger{position:absolute;left:10px;top:10px}
 .compass{position:absolute;right:10px;top:10px}
 .compass span{display:flex}

@@ -1,11 +1,15 @@
 # Publica la app en GitHub Pages cada vez que se sube algo a main o a test:
 #   rama main → https://navimaps.github.io/
 #   rama test → https://navimaps.github.io/test/
+# Además corre sola cada 30 minutos para actualizar alturas.json (alturas del río del INA y mareas del SHN):
+# el archivo se arma al publicar, no se guarda en el repositorio (así no se llena de commits).
 name: Publicar
 
 on:
   push:
     branches: [main, test]
+  schedule:
+    - cron: '7,37 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -41,13 +45,24 @@ jobs:
       - name: Armar el sitio (main en la raíz, test en /test/)
         run: |
           mkdir -p sitio
-          rsync -a --exclude .git --exclude .github main/ sitio/
+          rsync -a --exclude .git --exclude .github --exclude scripts main/ sitio/
           if [ "${{ steps.test.outcome }}" = "success" ]; then
             mkdir -p sitio/test
-            rsync -a --exclude .git --exclude .github test/ sitio/test/
+            rsync -a --exclude .git --exclude .github --exclude scripts test/ sitio/test/
           fi
           touch sitio/.nojekyll
           find sitio -maxdepth 2 -type f | sort
+
+      - name: Bajar alturas del río (INA) y mareas (SHN)
+        continue-on-error: true
+        run: |
+          # Si una fuente falla, el script conserva lo que había en la versión publicada.
+          # Si falla todo el script, se vuelve a publicar el alturas.json anterior tal cual.
+          SCRIPT=main/scripts/alturas.py; [ -f "$SCRIPT" ] || SCRIPT=test/scripts/alturas.py
+          python3 "$SCRIPT" sitio/alturas.json https://navimaps.github.io/alturas.json \
+            || curl -fsS -o sitio/alturas.json https://navimaps.github.io/alturas.json \
+            || echo "Sin alturas.json esta vez"
+          if [ -f sitio/alturas.json ] && [ -d sitio/test ]; then cp sitio/alturas.json sitio/test/alturas.json; fi
 
       - uses: actions/configure-pages@v6
 
