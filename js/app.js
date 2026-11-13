@@ -84,6 +84,7 @@ function App(){
     window.addEventListener('online',on);window.addEventListener('offline',off);
     return function(){window.removeEventListener('online',on);window.removeEventListener('offline',off)}},[]);
 
+  var drawnPois=useRef([]);
   var cv=useRef(null),sc=useRef(null),scl=useRef(null),raf=useRef(0),tiles=useRef({}),drawRef=useRef(null);
   var D=useRef({}),wid=useRef(null),first=useRef(true),lock=useRef(null),trk=useRef(track),kmR=useRef(0),recR=useRef(false),tt=useRef(0),saveT=useRef(0),fr=useRef(0);
   D.current={pin:pin,marks:marks,track:track,me:me,dest:dest,route:route,layers:layers,orig:orig,res:res,sel:sel,cruise:cruise};
@@ -130,22 +131,31 @@ function App(){
     if(fr.current%30===0)trimTiles();
     function P(p){var q=px(p.lat,p.lng,v.z);return{x:q.x-ox,y:q.y-oy}}
     if(d.layers.track&&d.track.length>1){ctx.strokeStyle=C.accent;ctx.lineWidth=4;ctx.lineJoin='round';ctx.beginPath();d.track.forEach(function(p,i){var q=P(p);i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y)});ctx.stroke()}
-    (d.res||[]).forEach(function(r){if(r.mi!=null||(r.poi&&lugares()&&d.layers.pois!==false&&v.z>=13))return;var on=r.i===d.sel;
+    (d.res||[]).forEach(function(r){if(r.mi!=null||(r.poi&&lugares()&&d.layers.pois!==false&&v.z>=(r.c==='fuel'||r.c==='marina'?13:15)))return;var on=r.i===d.sel;
       if(r.lines){ctx.strokeStyle=on?'#ff1f1f':'rgba(255,40,40,.65)';ctx.lineWidth=on?9:6;ctx.lineCap='round';ctx.lineJoin='round';
         r.lines.forEach(function(ln){ctx.beginPath();ln.forEach(function(p,j){var q=P(p);j?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y)});ctx.stroke()});ctx.lineCap='butt'}
       else{var q=P(r);ctx.fillStyle=on?'#ff7a1a':'#7c5cff';ctx.strokeStyle='#fff';ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(q.x,q.y,on?10:7,0,7);ctx.fill();ctx.stroke()}
       if(on){var lq=P(r);ctx.save();ctx.translate(lq.x,lq.y);ctx.rotate(-v.r);ctx.font='600 13px system-ui';ctx.lineWidth=3;ctx.strokeStyle=C.bg;ctx.strokeText(r.name,12,-12);ctx.fillStyle=C.fg;ctx.fillText(r.name,12,-12);ctx.restore()}});
-    // Lugares del archivo lugares.json: ícono desde zoom 13, nombre desde zoom 16
-    var LG=lugares();
+    // Lugares del archivo lugares.json. Zoom 13-14: solo combustible y marinas; desde 15, todos.
+    // Si dos íconos se pisan se dibuja uno solo (gana el de más prioridad); los nombres, desde zoom 16 y sin encimarse.
+    var LG=lugares(),seen={},labs=[],drawn=[];
     if(LG&&d.layers.pois!==false&&v.z>=13){ctx.textAlign='center';ctx.textBaseline='middle';
-      LG.forEach(function(x){var q=P(x);if(q.x<-ex-20||q.x>w+ex+20||q.y<-ey-20||q.y>h+ey+20)return;
-        var on=d.pin&&d.pin.poi&&d.pin.poi.lat===x.lat&&d.pin.poi.lng===x.lng;
+      var cr0=Math.cos(v.r),sr0=Math.sin(v.r),pinPoi=d.pin&&d.pin.poi;
+      LG.forEach(function(x){if(v.z<15&&x.c!=='fuel'&&x.c!=='marina')return;
+        var q=P(x);if(q.x<-ex-20||q.x>w+ex+20||q.y<-ey-20||q.y>h+ey+20)return;
+        var on=pinPoi&&pinPoi.lat===x.lat&&pinPoi.lng===x.lng;
+        // posición real en pantalla (con el giro) para ver si se pisa con otro
+        var rx=w/2+(q.x-w/2)*cr0-(q.y-h/2)*sr0,ry=h/2+(q.x-w/2)*sr0+(q.y-h/2)*cr0,ck=Math.round(rx/22)+'_'+Math.round(ry/22);
+        if(seen[ck]&&!on)return;seen[ck]=1;drawn.push(x);
         ctx.save();ctx.translate(q.x,q.y);ctx.rotate(-v.r);
         ctx.fillStyle='rgba(255,255,255,.92)';ctx.strokeStyle=on?C.accent:'rgba(0,0,0,.25)';ctx.lineWidth=on?4:1;ctx.beginPath();ctx.arc(0,0,on?15:12,0,7);ctx.fill();ctx.stroke();
         ctx.font='14px system-ui';ctx.fillStyle='#000';ctx.fillText(x.e,0,1);
-        if(v.z>=16&&x.named){ctx.textAlign='left';ctx.font='600 12px system-ui';ctx.lineWidth=3;ctx.strokeStyle=C.bg;ctx.strokeText(x.name,16,0);ctx.fillStyle=C.fg;ctx.fillText(x.name,16,0);ctx.textAlign='center'}
+        if(v.z>=16&&x.named){ctx.font='600 12px system-ui';var tw=ctx.measureText(x.name).width,box={a:rx+16,b:ry-8,c:rx+16+tw,d:ry+8};
+          if(!labs.some(function(o){return box.a<o.c&&box.c>o.a&&box.b<o.d&&box.d>o.b})){labs.push(box);
+            ctx.textAlign='left';ctx.lineWidth=3;ctx.strokeStyle=C.bg;ctx.strokeText(x.name,16,0);ctx.fillStyle=C.fg;ctx.fillText(x.name,16,0);ctx.textAlign='center'}}
         ctx.restore()});
       ctx.textAlign='start';ctx.textBaseline='alphabetic'}
+    drawnPois.current=drawn;
     (d.layers.marks?d.marks:[]).forEach(function(m){var q=P(m);ctx.fillStyle=C.danger;ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.beginPath();ctx.arc(q.x,q.y,8,0,7);ctx.fill();ctx.stroke();
       ctx.font='600 13px system-ui';ctx.lineWidth=3;ctx.strokeStyle=C.bg;ctx.save();ctx.translate(q.x,q.y);ctx.rotate(-v.r);ctx.strokeText(m.name,12,5);ctx.fillStyle=C.fg;ctx.fillText(m.name,12,5);ctx.restore()});
     if(d.dest&&d.layers.route){var dq=P(d.dest);if(d.route&&d.route.ok){var sp=d.route.pts.map(P),cum=[0],tot=0;
@@ -183,7 +193,7 @@ function App(){
     return ll(c.x+fx*cr+fy*sr,c.y-fx*sr+fy*cr,v.z)}
   // ¿El toque cayó sobre un punto guardado? Devuelve su número o -1 (radio de 24 px)
   // ¿El toque cayó sobre un lugar del archivo? Devuelve el lugar o null (radio de 22 px)
-  function tapPoi(sp){var d=D.current,L=lugares(),v=V.current;if(!L||d.layers.pois===false||v.z<13)return null;
+  function tapPoi(sp){var d=D.current,L=drawnPois.current,v=V.current;if(!L||!L.length||d.layers.pois===false||v.z<13)return null;
     var g=toLL(sp.x,sp.y),t=px(g.lat,g.lng,v.z),best=null,bd=22;
     L.forEach(function(x){var q=px(x.lat,x.lng,v.z),dd=Math.hypot(q.x-t.x,q.y-t.y);if(dd<bd){bd=dd;best=x}});return best}
   function tapMark(sp){var d=D.current;if(!d.layers.marks)return -1;var v=V.current,g=toLL(sp.x,sp.y),t=px(g.lat,g.lng,v.z),best=-1,bd=24;

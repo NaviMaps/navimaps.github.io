@@ -18,12 +18,12 @@ var KIND = {
   marina: 'Marina', pier: 'Muelle', boatyard: 'Guardería / astillero', supermarket: 'Supermercado',
   convenience: 'Proveeduría', general: 'Almacén', hotel: 'Hotel', guest_house: 'Alojamiento',
   chalet: 'Cabaña', hostel: 'Hostel', camp_site: 'Camping', pharmacy: 'Farmacia', hospital: 'Hospital', clinic: 'Clínica',
-  fast_food: 'Comida rápida', ice_cream: 'Heladería', motel: 'Motel'
+  fast_food: 'Comida rápida', ice_cream: 'Heladería', motel: 'Motel', marketplace: 'Mercado'
 };
 // Tipo de OSM → categoría del buscador (para el ícono y para buscar "combustible", "restaurantes"…)
 var CAT_DE = {
   restaurant: 'rest', fast_food: 'rest', ice_cream: 'rest', fuel: 'fuel', cafe: 'bar', bar: 'bar', pub: 'bar',
-  marina: 'marina', pier: 'marina', boatyard: 'marina', supermarket: 'shop', convenience: 'shop', general: 'shop',
+  marina: 'marina', pier: 'marina', boatyard: 'marina', supermarket: 'shop', convenience: 'shop', general: 'shop', marketplace: 'shop',
   hotel: 'lodge', guest_house: 'lodge', chalet: 'lodge', hostel: 'lodge', camp_site: 'lodge', motel: 'lodge',
   pharmacy: 'health', hospital: 'health', clinic: 'health'
 };
@@ -168,6 +168,9 @@ function loadLugares() {
         var c = CAT_DE[x.k] || 'shop', kind = x.b ? 'Combustible náutico' : (KIND[x.k] || 'Lugar');
         return { name: x.n || kind, named: !!x.n, kind: kind, c: c, e: emojiDe(c), lat: x.la, lng: x.lo, lines: null, poi: true };
       });
+      // Orden de prioridad para dibujar: si dos íconos se pisan, gana el primero (combustible y marinas antes)
+      var PRI = { fuel: 0, marina: 1, rest: 2, bar: 3, shop: 4, lodge: 5, health: 6 };
+      LUG.sort(function (a, b) { return (PRI[a.c] - PRI[b.c]) || (b.named - a.named); });
       window.dispatchEvent(new Event('delta-lugares'));
     })
     .catch(function () {});

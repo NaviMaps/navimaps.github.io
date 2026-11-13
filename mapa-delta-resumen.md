@@ -26,7 +26,10 @@ App web tipo "Google Maps / Wavve" para navegar los ríos y arroyos del Delta de
 20. **Quitar destino borra también la salida (v10, 12/11/2026, en `test`):** al tocar *Quitar destino* se borra el punto elegido con *Salir de acá* (y la ruta), así la próxima ruta vuelve a salir desde tu ubicación.
 21. **Lugares en el mapa (v11, 13/11/2026, en `test`):** archivo propio **`lugares.json`** (como `cauces.json`), generado con **`descargar-lugares.ps1`**: estaciones de servicio (incluido combustible náutico), restaurantes, bares y cafés, marinas y muelles, proveedurías, alojamiento y salud del Delta. Se ven como íconos desde zoom 13 (con nombre desde zoom 16); al tocar uno se abre su tarjeta con **Cómo llegar** y ☆ para guardarlo en tus puntos. Con el archivo cargado, el buscador (por nombre o por categoría, como "combustible") sale todo del celular: al instante, sin señal y sin consultar al servidor. Capa "Lugares" en Capas y estado en Ajustes > Lugares guardados. Sin el archivo, la app sigue buscando lugares en el servidor como antes.
 
-**Estado actual:** versión `v11` en `test` (copia de seguridad, pines con el dedo, Cómo llegar y buscador unificado y arreglado), `v4` en `main`. La carpeta local trabaja en la rama `test`.
+22. **Lugares reales y menos amontonados (v12, 13/11/2026):** se subió `lugares.json` (2.387 lugares del Delta, 165 KB, bajado el 12/11 con el script). Para que no se amontonen en Tigre: en zoom 13 y 14 solo se ven ⛽ combustible y ⚓ marinas y muelles; desde zoom 15, todos. Si dos íconos o dos nombres se pisan, se dibuja uno solo (combustible y marinas tienen prioridad). Se agregó el tipo "Mercado".
+23. **Todo pasa a `main` (13/11/2026):** las versiones v5 a v12 quedan publicadas en https://navimaps.github.io/.
+
+**Estado actual:** versión `v12` en `main` y en `test`. La carpeta local trabaja en la rama `test`.
 
 ## Funciones actuales
 
@@ -137,7 +140,7 @@ Este resumen (`mapa-delta-resumen.md`) también está en el repositorio, para re
 
 ## Sesión con Claude Code en la nube (12 y 13/11/2026)
 
-Los cambios 15 a 21 (v5 a v11) se hicieron desde Claude Code en la nube (claude.ai/code), con el repositorio conectado desde GitHub, sin la computadora del laburo. Todo quedó en la rama `test`.
+Los cambios 15 a 21 (v5 a v11) se hicieron desde Claude Code en la nube (claude.ai/code), con el repositorio conectado desde GitHub, sin la computadora del laburo. Al final se pasó todo a `main`.
 
 | Versión | Commit | Cambio |
 |---|---|---|
@@ -148,6 +151,7 @@ Los cambios 15 a 21 (v5 a v11) se hicieron desde Claude Code en la nube (claude.
 | v9 | `d76d209` | El buscador ya no queda trabado en "Buscando…" |
 | v10 | `9acf111` | "Quitar destino" borra también la salida |
 | v11 | `a278bd1` | Lugares en el mapa (`lugares.json`) y su script |
+| v12 | — | `lugares.json` real (2.387 lugares) y menos amontonados; todo pasa a `main` |
 
 **Cómo se probó:** cada cambio se probó en un navegador automático (Chromium) simulando un iPhone, con los servidores externos simulados o bloqueados. Se probaron exportar e importar, el pin con toque largo (y que no aparezca con un toque corto ni al arrastrar), la tarjeta de un punto guardado, Cómo llegar con la ruta calculada, el buscador con un servidor lento (20 s), Quitar destino y los lugares.
 
