@@ -67,7 +67,9 @@ App web tipo "Google Maps / Wavve" para navegar los ríos y arroyos del Delta de
 
 42. **Botón de Capas y su paso en el tutorial (v30, 13/11/2026, en `test`):** botón redondo con el ícono de hojas apiladas debajo de grabar, que abre un panel de Capas abajo (estilo de mapa, zonas deportivas con el código de colores y la aclaración de que se toca una zona para ver qué deporte es, señales náuticas, alturas, lugares, puntos, recorrido, ruta y clima). La pestaña Capas del menú muestra lo mismo. Paso nuevo en el tutorial, "Capas y zonas deportivas", con una animación de capturas reales: tocar el botón, elegir estilo, ver los colores, tocar una zona del Barca Grande y la tarjeta "Esquí y wakeboard". Imágenes `img/tuto/capas1` a `capas5.webp`.
 
-**Estado actual:** versión `v30` en `test` (botón de Capas y tutorial), `v28` en `main`. La carpeta local trabaja en la rama `test`.
+43. **Capas solo en su botón, tipo persiana (v31, 13/11/2026, en `test`):** se sacó la pestaña Capas del menú ☰ (quedan Puntos, Historial y Ajustes). El panel de Capas tiene arriba una barrita: arrastrándola para abajo se esconde y queda asomado solo el título; para arriba (o tocando la barrita o el título) vuelve a abrirse. Mientras se arrastra, el panel sigue al dedo.
+
+**Estado actual:** versión `v31` en `test` (botón de Capas tipo persiana y tutorial), `v28` en `main`. La carpeta local trabaja en la rama `test`.
 
 ## Funciones actuales
 
@@ -101,7 +103,7 @@ App web tipo "Google Maps / Wavve" para navegar los ríos y arroyos del Delta de
 
 ### Menú hamburguesa (☰)
 - **Puntos:** lista de marcadores guardados, con renombrar, usar de destino o borrar.
-- **Capas:** interruptores para puntos, recorrido, destino y ruta, clima y satélite.
+- **Capas:** ahora tienen su propio botón (hojas apiladas) a la derecha, con un panel tipo persiana.
 - **Historial:** búsquedas recientes, con opción de borrar.
 - **Ajustes:** tema (auto, claro, oscuro), velocidad de crucero, prioridad de cauces, estado de los cauces guardados y borrar recorrido.
 

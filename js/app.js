@@ -40,6 +40,7 @@ function pl(ctx, sp, a, b, cum) {
 function css(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
 function load() { try { return JSON.parse(localStorage.getItem(PRE+'delta') || 'null') || {}; } catch (e) { return {}; } }
 
+var PEEK=58; // alto que queda visible del panel de capas plegado (barrita + título)
 function App(){
   var sv=useRef(null);if(!sv.current)sv.current=load();
   var V=useRef({lat:sv.current.lat||-34.38,lng:sv.current.lng||-58.57,z:sv.current.z||11,r:0});
@@ -89,6 +90,16 @@ function App(){
   // Tutorial de bienvenida: la primera vez que se abre la app, o desde Ajustes › Ver tutorial
   var _tu=useState(!tutorialVisto()),tuto=_tu[0],setTuto=_tu[1];
   var _cp=useState(false),capas=_cp[0],setCapas=_cp[1];
+  // Panel de capas tipo persiana: se arrastra desde la barrita para esconderlo a medias o volver a abrirlo
+  var _cc=useState(false),capCol=_cc[0],setCapCol=_cc[1];
+  var capRef=useRef(null),capDrag=useRef(null);
+  function capDown(e){var el=capRef.current;if(!el)return;e.currentTarget.setPointerCapture(e.pointerId);
+    var r=el.getBoundingClientRect(),cur=capCol?r.height-PEEK:0;capDrag.current={y:e.clientY,base:cur,max:r.height-PEEK,dy:0};el.style.transition='none'}
+  function capMove(e){var d=capDrag.current,el=capRef.current;if(!d||!el)return;d.dy=e.clientY-d.y;
+    var t=Math.max(0,Math.min(d.max,d.base+d.dy));el.style.transform='translateY('+t+'px)'}
+  function capUp(){var d=capDrag.current,el=capRef.current;capDrag.current=null;if(!d||!el)return;
+    el.style.transition='';el.style.transform='';
+    var c=Math.abs(d.dy)<6?!capCol:d.dy>50?true:d.dy<-50?false:capCol;if(c)el.scrollTop=0;setCapCol(c)}
   useEffect(function(){function f(){req()}window.addEventListener('delta-zonas',f);return function(){window.removeEventListener('delta-zonas',f)}},[]);
   useEffect(function(){function f(){setRv(function(x){return x+1});req()}window.addEventListener('delta-alturas',f);if(alturas())f();return function(){window.removeEventListener('delta-alturas',f)}},[]);
   useEffect(function(){function f(){setLgc(lugares()?lugares().length:0);req()}window.addEventListener('delta-lugares',f);f();return function(){window.removeEventListener('delta-lugares',f)}},[]);
@@ -465,7 +476,7 @@ function App(){
       <button className="fab" aria-label="Mi posición" onClick=${locate}>◎</button>
       <button className="fab" aria-label="Satélite" onClick=${toggleSat}>${sat?'🗺':'🛰'}</button>
       <button className=${'fab'+(rec?' recon':'')} aria-label=${rec?'Detener recorrido':'Grabar recorrido'} onClick=${function(){recOn(!rec)}}>${rec?html`<i className="sq"></i>`:html`<i className="dot"></i>`}</button>
-      <button className=${'fab'+(capas?' fabon':'')} aria-label="Capas" onClick=${function(){var a=!capas;setCapas(a);if(a){setPin(null);setRio(null);setZn(null)}}}><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round"><path d="M12 3 2.5 8 12 13l9.5-5L12 3z"/><path d="m2.5 12 9.5 5 9.5-5"/><path d="m2.5 16 9.5 5 9.5-5"/></svg></button>
+      <button className=${'fab'+(capas?' fabon':'')} aria-label="Capas" onClick=${function(){var a=!capas;setCapas(a);setCapCol(false);if(a){setPin(null);setRio(null);setZn(null)}}}><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round"><path d="M12 3 2.5 8 12 13l9.5-5L12 3z"/><path d="m2.5 12 9.5 5 9.5-5"/><path d="m2.5 16 9.5 5 9.5-5"/></svg></button>
     </div>
     <div id="toast" className=${toast?'on':''}>${toast}</div>
     <button className="fab burger" aria-label="Menú" onClick=${function(){setMenu(true)}}>☰</button>
@@ -495,7 +506,7 @@ function App(){
     <div id="scrim" className=${menu?'on':''} onClick=${function(){setMenu(false)}}></div>
     <div id="menu" className=${menu?'open':''}>
       <div className="mh"><b>Menú</b><button className="mini" onClick=${function(){setMenu(false)}}>Cerrar</button></div>
-      <div className="tabs">${[['puntos','Puntos'],['capas','Capas'],['historial','Historial'],['ajustes','Ajustes']].map(function(t){
+      <div className="tabs">${[['puntos','Puntos'],['historial','Historial'],['ajustes','Ajustes']].map(function(t){
         return html`<button key=${t[0]} className=${'tab'+(tab===t[0]?' on':'')} onClick=${function(){setTab(t[0])}}>${t[1]}</button>`})}</div>
       <div className="mb">
         ${tab==='puntos'?(marks.length?marks.map(function(m,i){return html`<div className="mi" key=${i}>
@@ -507,7 +518,6 @@ function App(){
                 <button className="mini" aria-label="Ir" onClick=${function(){setMenu(false);goDest({lat:m.lat,lng:m.lng,name:m.name})}}>➤</button>
                 <button className="mini" aria-label="Borrar" style=${{color:'var(--danger)'}} onClick=${function(){del(i)}}>✕</button>`}
           </div>`}):html`<div className="empty">Todavía no guardaste ningún punto. Usá Marcar en el mapa.</div>`)
-        :tab==='capas'?capasUI()
         :tab==='historial'?html`<div>${hist.length?hist.map(function(h){return html`<div className="mi" key=${h}><span onClick=${function(){setMenu(false);runSearch(h)}}>🔍 ${h}</span></div>`}):html`<div className="empty">Todavía no hiciste búsquedas.</div>`}
             ${hist.length?html`<div className="lr"><span>Borrar historial</span><button className="mini" style=${{color:'var(--danger)'}} onClick=${function(){setHist([]);try{localStorage.removeItem(PRE+'delta_hist')}catch(e){}}}>Borrar</button></div>`:null}</div>`
         :html`<div>
@@ -545,8 +555,9 @@ function App(){
       ${sh&&sh.aviso?html`<div className="rioaviso"><b>⚠ Aviso del SHN</b><small>${sh.aviso}</small></div>`:null}
       <small style=${{color:'var(--muted)'}}>Altura sobre el cero de la escala: no es la profundidad del lugar.${e.alerta!=null?' Alerta desde '+metros(e.alerta)+'.':''}${e.bajas!=null?' Aguas bajas hasta '+metros(e.bajas)+'.':''} Datos: INA y SHN, actualizados ${hace(new Date(AL.actualizado))}.</small>
     </div>`})(rioSel):null}
-    ${capas?html`<div id="capascard">
-      <div className="row" style=${{alignItems:'center'}}><b style=${{flex:1,fontSize:'18px'}}>Capas</b><button className="clr" aria-label="Cerrar" onClick=${function(){setCapas(false)}}>✕</button></div>
+    ${capas?html`<div id="capascard" ref=${capRef} className=${capCol?'col':''}>
+      <div className="grip" onPointerDown=${capDown} onPointerMove=${capMove} onPointerUp=${capUp} onPointerCancel=${capUp} aria-label="Arrastrá para esconder o mostrar"><i></i></div>
+      <div className="row" style=${{alignItems:'center'}}><b style=${{flex:1,fontSize:'18px'}} onClick=${function(){if(capCol)setCapCol(false)}}>Capas</b><button className="clr" aria-label="Cerrar" onClick=${function(){setCapas(false)}}>✕</button></div>
       ${capasUI()}</div>`:null}
     ${zn&&!pin&&!rioSel?(function(z){var dp=DEPORTES[z.d];return html`<div id="pincard">
       <div className="row" style=${{alignItems:'center'}}><div style=${{flex:1}}><b style=${{fontSize:'18px'}}>${dp.e} ${dp.n}</b>
