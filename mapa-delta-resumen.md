@@ -47,12 +47,14 @@ App web tipo "Google Maps / Wavve" para navegar los ríos y arroyos del Delta de
 
 32. **Estilos sin clave (v21, 13/11/2026, en `test`):** CARTO dejó de funcionar sin clave (devuelve una imagen "API KEY REQUIRED") y Esri Océano y National Geographic no tienen datos del Delta de cerca, así que se reemplazaron. Estilos actuales, todos probados sin clave con el mapa real: OSM, OSM suave (Humanitario), Relieve (OpenTopoMap), Calles (Esri), Topo Esri, Gris claro y Gris oscuro (Esri) y Satélite. Zoom máximo de cada uno: OSM 19, OSM suave 18, Relieve 17, Calles y Topo 18, Gris claro y oscuro 16; más cerca se agrandan los mosaicos.
 
-**Estado actual:** versión `v21` en `test` (gestos de zoom, vidrio nuevo y estilos de mapa sin clave), `v17` en `main`. La carpeta local trabaja en la rama `test`.
+33. **Solo 3 estilos (v22, 13/11/2026, en `test`):** quedan OSM, Relieve (OpenTopoMap) y Satélite; se sacaron los demás. Si alguien tenía elegido otro estilo, vuelve a OSM.
+
+**Estado actual:** versión `v22` en `test` (gestos de zoom, vidrio nuevo y estilos OSM, Relieve y Satélite), `v17` en `main`. La carpeta local trabaja en la rama `test`.
 
 ## Funciones actuales
 
 ### Mapa
-- **Estilos de mapa** sin clave (OSM, OSM suave, Relieve, Calles, Topo Esri, Gris claro y Gris oscuro) y **vista satelital** (Esri), más la capa de **señales náuticas** de OpenSeaMap.
+- **Estilos de mapa:** OSM, Relieve (OpenTopoMap) y Satélite (Esri), más la capa de **señales náuticas** de OpenSeaMap.
 - Arrastre, zoom con pellizco, doble toque para acercar y toque con dos dedos para alejar (los dos con animación suave).
 - **Rotación con dos dedos** con zona muerta de unos 15° (así el zoom no gira el mapa sin querer).
 - **Brújula** arriba a la derecha; al tocarla vuelve el norte arriba con animación.
@@ -113,7 +115,7 @@ App web tipo "Google Maps / Wavve" para navegar los ríos y arroyos del Delta de
 | `js/alturas.js` | Lee `alturas.json`; tendencia, estado, estación más cercana y gráfico |
 | `scripts/alturas.py` | Baja las alturas del INA y las mareas del SHN y arma `alturas.json` (lo corre GitHub cada 30 min) |
 | `zonas.json` | Zonas de práctica deportiva de la Prefectura (34 zonas, pasadas de los croquis) |
-| `js/estilos.js` | Estilos de mapa base (de dónde sale cada uno, zoom máximo, atribución) y capa de OpenSeaMap |
+| `js/estilos.js` | Estilos de mapa (OSM, Relieve, Satélite: de dónde sale cada uno, zoom máximo, atribución) y capa de OpenSeaMap |
 | `js/zonas.js` | Lee `zonas.json`, colores por deporte y qué zona se tocó |
 | `sw.js` | Service worker: guarda la app, los cauces y los mosaicos vistos para usarla sin señal |
 | `manifest.webmanifest` | Nombre, colores e íconos para instalarla en la pantalla de inicio |
