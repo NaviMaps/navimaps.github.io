@@ -269,7 +269,7 @@ function App(){
       if(np0===1)G.gs={t:Date.now(),maxp:1,moved:0,mid:null};else if(G.gs){G.gs.maxp=Math.max(G.gs.maxp,np0);var pp=Object.keys(G.ptr).map(function(k){return G.ptr[k]});G.gs.mid={x:(pp[0].x+pp[1].x)/2,y:(pp[0].y+pp[1].y)/2}}
       G.last={t:Date.now(),moved:np0>1?99:0};G.pinch=null;G.acc=0;G.rot=false;
       // Mantener apretado medio segundo sin mover: pone un pin ahí y pregunta el nombre
-      clearTimeout(G.lp);var p0=G.ptr[e.pointerId];G.lp=Object.keys(G.ptr).length===1?setTimeout(function(){if(G.last&&G.last.moved<10&&Object.keys(G.ptr).length===1){G.last.moved=99;var g=toLL(p0.x,p0.y);setName('');setPin({lat:g.lat,lng:g.lng})}},500):0}
+      clearTimeout(G.lp);var p0=G.ptr[e.pointerId];G.lp=Object.keys(G.ptr).length===1?setTimeout(function(){if(G.last&&G.last.moved<10&&Object.keys(G.ptr).length===1){G.last.moved=99;if(D.current.capas){setCapas(false);return}var g=toLL(p0.x,p0.y);setName('');setPin({lat:g.lat,lng:g.lng})}},500):0}
     function move(e){var p=G.ptr[e.pointerId];if(!p)return;var np=pos(e),ids=Object.keys(G.ptr);
       if(ids.length===2){G.ptr[e.pointerId]=np;var a=G.ptr[ids[0]],b=G.ptr[ids[1]],d=Math.hypot(a.x-b.x,a.y-b.y),mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
         if(G.pinch&&G.gs)G.gs.moved+=Math.abs(d-G.pinch.d)+Math.hypot(mx-G.pinch.x,my-G.pinch.y);
