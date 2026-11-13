@@ -88,6 +88,7 @@ function App(){
   var _zn=useState(null),zn=_zn[0],setZn=_zn[1];
   // Tutorial de bienvenida: la primera vez que se abre la app, o desde Ajustes › Ver tutorial
   var _tu=useState(!tutorialVisto()),tuto=_tu[0],setTuto=_tu[1];
+  var _cp=useState(false),capas=_cp[0],setCapas=_cp[1];
   useEffect(function(){function f(){req()}window.addEventListener('delta-zonas',f);return function(){window.removeEventListener('delta-zonas',f)}},[]);
   useEffect(function(){function f(){setRv(function(x){return x+1});req()}window.addEventListener('delta-alturas',f);if(alturas())f();return function(){window.removeEventListener('delta-alturas',f)}},[]);
   useEffect(function(){function f(){setLgc(lugares()?lugares().length:0);req()}window.addEventListener('delta-lugares',f);f();return function(){window.removeEventListener('delta-lugares',f)}},[]);
@@ -272,9 +273,9 @@ function App(){
       if(!Object.keys(G.ptr).length&&G.gs&&G.gs.maxp===2&&Date.now()-G.gs.t<350&&G.gs.moved<14&&G.gs.mid){var m=G.gs.mid;G.gs=null;G.lastTap=0;animZoom(m.x,m.y,-1);return}
       if(!Object.keys(G.ptr).length){if(G.last&&G.last.moved<8&&Date.now()-G.last.t<300){var hit=tapMark(np);
         if(hit>=0){var hm=D.current.marks[hit];setName('');setPin({lat:hm.lat,lng:hm.lng,mi:hit});G.lastTap=0;save();return}
-        var hr=tapRio(np);if(hr){setPin(null);setRio(hr.id);G.lastTap=0;save();return}
+        var hr=tapRio(np);if(hr){setPin(null);setCapas(false);setRio(hr.id);G.lastTap=0;save();return}
         var hp=tapPoi(np);if(hp){setName('');setZn(null);setPin({lat:hp.lat,lng:hp.lng,poi:hp});G.lastTap=0;save();return}
-        if(D.current.layers.zonas!==false&&v.z>=11){var hz=zonaEn(toLL(np.x,np.y),v.z);if(hz){setPin(null);setRio(null);setZn(hz);G.lastTap=0;save();return}}
+        if(D.current.layers.zonas!==false&&v.z>=11){var hz=zonaEn(toLL(np.x,np.y),v.z);if(hz){setPin(null);setRio(null);setCapas(false);setZn(hz);G.lastTap=0;save();return}}
         if(D.current.zn)setZn(null);
         if(D.current.pin&&(D.current.pin.mi!=null||D.current.pin.poi))setPin(null);
         var n=Date.now();if(n-G.lastTap<320){animZoom(np.x,np.y,1);G.lastTap=0}else G.lastTap=n}save()}}
@@ -426,6 +427,21 @@ function App(){
     go();var id=setInterval(go,600000);return function(){alive=false;clearInterval(id)}
   },[]);
 
+  // Capas: se usan en la pestaña del menú y en el panel del botón de capas
+  function capasUI(){return html`<div>
+    <div className="lr" style=${{flexWrap:'wrap',padding:'8px 0'}}><span>Estilo de mapa</span><div className="estilos">${ORDEN.map(function(k){var on=sat?k==='sat':k===estilo;
+      return html`<button key=${k} className=${'mini'+(on?' on':'')} onClick=${function(){elegirEstilo(k)}}>${ESTILOS[k].n}</button>`})}</div></div>
+    <div className="lr"><span>Zonas deportivas <small style=${{color:'var(--muted)'}}>(Prefectura)</small></span>${sw(layers.zonas!==false,function(){var n=Object.assign({},layers);n.zonas=layers.zonas===false;setLayers(n)})}</div>
+    ${layers.zonas!==false?html`<div className="zleg">${Object.keys(DEPORTES).map(function(k){var dp=DEPORTES[k];return html`<span key=${k}><i style=${{background:dp.c}}></i>${dp.n}</span>`})}
+      <small className="zayuda">Tocá una zona en el mapa para ver qué deporte es. Se ven desde zoom 11; las punteadas son aproximadas.</small></div>`:null}
+    <div className="lr"><span>Señales náuticas <small style=${{color:'var(--muted)'}}>(boyas y balizas, OpenSeaMap)</small></span>${sw(!!layers.sea,function(){setLayer('sea')})}</div>
+    <div className="lr"><span>Alturas del río</span>${sw(layers.rio!==false,function(){var n=Object.assign({},layers);n.rio=layers.rio===false;setLayers(n)})}</div>
+    <div className="lr"><span>Lugares <small style=${{color:'var(--muted)'}}>(combustible, restaurantes…)</small></span>${sw(layers.pois!==false,function(){var n=Object.assign({},layers);n.pois=layers.pois===false;setLayers(n)})}</div>
+    <div className="lr"><span>Puntos guardados</span>${sw(layers.marks,function(){setLayer('marks')})}</div>
+    <div className="lr"><span>Recorrido grabado</span>${sw(layers.track,function(){setLayer('track')})}</div>
+    <div className="lr"><span>Destino y ruta</span>${sw(layers.route,function(){setLayer('route')})}</div>
+    <div className="lr"><span>Viento y clima</span>${sw(layers.wx,function(){setLayer('wx')})}</div>
+  </div>`}
   var from=orig||me;
   // Altura del río más cercana (a vos o al centro del mapa) para el recuadro de arriba
   var AL=alturas(),rioE=AL?cercana(me||{lat:V.current.lat,lng:V.current.lng}):null,rioU=rioE?ultimo(rioE):null;
@@ -449,6 +465,7 @@ function App(){
       <button className="fab" aria-label="Mi posición" onClick=${locate}>◎</button>
       <button className="fab" aria-label="Satélite" onClick=${toggleSat}>${sat?'🗺':'🛰'}</button>
       <button className=${'fab'+(rec?' recon':'')} aria-label=${rec?'Detener recorrido':'Grabar recorrido'} onClick=${function(){recOn(!rec)}}>${rec?html`<i className="sq"></i>`:html`<i className="dot"></i>`}</button>
+      <button className=${'fab'+(capas?' fabon':'')} aria-label="Capas" onClick=${function(){var a=!capas;setCapas(a);if(a){setPin(null);setRio(null);setZn(null)}}}><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round"><path d="M12 3 2.5 8 12 13l9.5-5L12 3z"/><path d="m2.5 12 9.5 5 9.5-5"/><path d="m2.5 16 9.5 5 9.5-5"/></svg></button>
     </div>
     <div id="toast" className=${toast?'on':''}>${toast}</div>
     <button className="fab burger" aria-label="Menú" onClick=${function(){setMenu(true)}}>☰</button>
@@ -490,19 +507,7 @@ function App(){
                 <button className="mini" aria-label="Ir" onClick=${function(){setMenu(false);goDest({lat:m.lat,lng:m.lng,name:m.name})}}>➤</button>
                 <button className="mini" aria-label="Borrar" style=${{color:'var(--danger)'}} onClick=${function(){del(i)}}>✕</button>`}
           </div>`}):html`<div className="empty">Todavía no guardaste ningún punto. Usá Marcar en el mapa.</div>`)
-        :tab==='capas'?html`<div>
-            <div className="lr"><span>Puntos guardados</span>${sw(layers.marks,function(){setLayer('marks')})}</div>
-            <div className="lr"><span>Lugares <small style=${{color:'var(--muted)'}}>(combustible, restaurantes…)</small></span>${sw(layers.pois!==false,function(){var n=Object.assign({},layers);n.pois=layers.pois===false;setLayers(n)})}</div>
-            <div className="lr"><span>Recorrido grabado</span>${sw(layers.track,function(){setLayer('track')})}</div>
-            <div className="lr"><span>Destino y ruta</span>${sw(layers.route,function(){setLayer('route')})}</div>
-            <div className="lr"><span>Viento y clima</span>${sw(layers.wx,function(){setLayer('wx')})}</div>
-            <div className="lr" style=${{flexWrap:'wrap',padding:'8px 0'}}><span>Estilo de mapa</span><div className="estilos">${ORDEN.map(function(k){var on=sat?k==='sat':k===estilo;
-              return html`<button key=${k} className=${'mini'+(on?' on':'')} onClick=${function(){elegirEstilo(k)}}>${ESTILOS[k].n}</button>`})}</div></div>
-            <div className="lr"><span>Señales náuticas <small style=${{color:'var(--muted)'}}>(boyas y balizas, OpenSeaMap)</small></span>${sw(!!layers.sea,function(){setLayer('sea')})}</div>
-            <div className="lr"><span>Zonas deportivas <small style=${{color:'var(--muted)'}}>(Prefectura)</small></span>${sw(layers.zonas!==false,function(){var n=Object.assign({},layers);n.zonas=layers.zonas===false;setLayers(n)})}</div>
-            ${layers.zonas!==false?html`<div className="zleg">${Object.keys(DEPORTES).map(function(k){var dp=DEPORTES[k];return html`<span key=${k}><i style=${{background:dp.c}}></i>${dp.n}</span>`})}</div>`:null}
-            <div className="lr"><span>Alturas del río</span>${sw(layers.rio!==false,function(){var n=Object.assign({},layers);n.rio=layers.rio===false;setLayers(n)})}</div>
-          </div>`
+        :tab==='capas'?capasUI()
         :tab==='historial'?html`<div>${hist.length?hist.map(function(h){return html`<div className="mi" key=${h}><span onClick=${function(){setMenu(false);runSearch(h)}}>🔍 ${h}</span></div>`}):html`<div className="empty">Todavía no hiciste búsquedas.</div>`}
             ${hist.length?html`<div className="lr"><span>Borrar historial</span><button className="mini" style=${{color:'var(--danger)'}} onClick=${function(){setHist([]);try{localStorage.removeItem(PRE+'delta_hist')}catch(e){}}}>Borrar</button></div>`:null}</div>`
         :html`<div>
@@ -540,6 +545,9 @@ function App(){
       ${sh&&sh.aviso?html`<div className="rioaviso"><b>⚠ Aviso del SHN</b><small>${sh.aviso}</small></div>`:null}
       <small style=${{color:'var(--muted)'}}>Altura sobre el cero de la escala: no es la profundidad del lugar.${e.alerta!=null?' Alerta desde '+metros(e.alerta)+'.':''}${e.bajas!=null?' Aguas bajas hasta '+metros(e.bajas)+'.':''} Datos: INA y SHN, actualizados ${hace(new Date(AL.actualizado))}.</small>
     </div>`})(rioSel):null}
+    ${capas?html`<div id="capascard">
+      <div className="row" style=${{alignItems:'center'}}><b style=${{flex:1,fontSize:'18px'}}>Capas</b><button className="clr" aria-label="Cerrar" onClick=${function(){setCapas(false)}}>✕</button></div>
+      ${capasUI()}</div>`:null}
     ${zn&&!pin&&!rioSel?(function(z){var dp=DEPORTES[z.d];return html`<div id="pincard">
       <div className="row" style=${{alignItems:'center'}}><div style=${{flex:1}}><b style=${{fontSize:'18px'}}>${dp.e} ${dp.n}</b>
         <small style=${{color:'var(--muted)',display:'block'}}>Zona de práctica deportiva · ${z.sec}${z.area?'':' · '+largo(z).toFixed(1).replace('.',',')+' km'}</small></div>

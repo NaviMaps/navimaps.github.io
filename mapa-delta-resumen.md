@@ -65,7 +65,9 @@ App web tipo "Google Maps / Wavve" para navegar los ríos y arroyos del Delta de
 
 41. **Animación de "Cómo llegar" (v29, 13/11/2026, en `test`):** el paso del tutorial muestra el recorrido completo con capturas reales y un dedo animado: mantener apretado el mapa → tocar «Ir ahí» → la ruta por los ríos (de un punto en el Río Sarmiento al Arroyo Abra Vieja, 3,7 mn) → el panel con la distancia, la llegada y «Ruta por agua». Imágenes `img/tuto/llegar1` a `llegar4.webp`.
 
-**Estado actual:** versión `v29` en `test` (animación de Cómo llegar), `v28` en `main`. La carpeta local trabaja en la rama `test`.
+42. **Botón de Capas y su paso en el tutorial (v30, 13/11/2026, en `test`):** botón redondo con el ícono de hojas apiladas debajo de grabar, que abre un panel de Capas abajo (estilo de mapa, zonas deportivas con el código de colores y la aclaración de que se toca una zona para ver qué deporte es, señales náuticas, alturas, lugares, puntos, recorrido, ruta y clima). La pestaña Capas del menú muestra lo mismo. Paso nuevo en el tutorial, "Capas y zonas deportivas", con una animación de capturas reales: tocar el botón, elegir estilo, ver los colores, tocar una zona del Barca Grande y la tarjeta "Esquí y wakeboard". Imágenes `img/tuto/capas1` a `capas5.webp`.
+
+**Estado actual:** versión `v30` en `test` (botón de Capas y tutorial), `v28` en `main`. La carpeta local trabaja en la rama `test`.
 
 ## Funciones actuales
 

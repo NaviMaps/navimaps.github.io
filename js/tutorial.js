@@ -34,9 +34,12 @@ var PASOS = [
   { e: '🌊', t: 'Altura del río y clima',
     d: 'Arriba ves tu velocidad, el viento y la altura del río en la estación más cercana. Tocá la altura para ver el gráfico, el pronóstico y las mareas del SHN.',
     x: 'Se actualiza sola cada 30 minutos con datos del INA y del SHN.', sel: '.hud', img: 'rio', pos: 'top' },
+  { e: '🗂️', t: 'Capas y zonas deportivas',
+    d: 'Con este botón elegís el estilo de mapa y qué ves encima. Las zonas deportivas de Prefectura tienen un color por deporte (rojo esquí y wake, negro jet ski, verde vela…).',
+    x: 'Tocá una zona y te dice qué deporte es. Las punteadas son aproximadas.', sel: '[aria-label="Capas"]', anim: 'capas' },
   { e: '☰', t: 'El menú',
-    d: 'En Capas elegís el estilo de mapa y prendés señales náuticas, zonas deportivas de Prefectura y lugares. En Puntos están los tuyos, y en Ajustes la copia de seguridad.',
-    x: 'Exportá una copia de seguridad cada tanto para no perder tus puntos.', sel: '.burger', img: 'capas', pos: '50% 78%' },
+    d: 'En Puntos están tus puntos guardados (renombrar, ir o borrar), en Historial tus búsquedas y en Ajustes el tema, la velocidad de crucero y la copia de seguridad.',
+    x: 'Exportá una copia de seguridad cada tanto para no perder tus puntos.', sel: '.burger' },
   { e: '⚠️', t: 'Navegá con criterio',
     d: 'La app usa datos de OpenStreetMap y no conoce profundidades, bajíos ni alturas de puentes. Es una ayuda: no reemplaza las cartas oficiales ni las indicaciones de Prefectura.',
     fin: true }
@@ -63,6 +66,13 @@ function Medio(props) {
       <i className="an-ring"></i><i className="f"></i>
       <span className="an-cap c1">1 · Mantené apretado donde querés ir</span><span className="an-cap c2">2 · Tocá «Ir ahí»</span>
       <span className="an-cap c3">3 · Calcula la ruta por los ríos</span><span className="an-cap c4">4 · Distancia, llegada y «Ruta por agua»</span></div>`;
+  if (p.anim === 'capas') return html`<div className="tuto-media an an-capas">
+      <img className="cl k1" src=${IMG + 'capas1.webp'} alt="" /><img className="cl k2" src=${IMG + 'capas2.webp'} alt="" />
+      <img className="cl k3" src=${IMG + 'capas3.webp'} alt="" /><img className="cl k4" src=${IMG + 'capas4.webp'} alt="" />
+      <img className="cl k5" src=${IMG + 'capas5.webp'} alt="" /><i className="f"></i>
+      <span className="an-cap q1">1 · Tocá el botón de capas</span><span className="an-cap q2">2 · Elegí el estilo de mapa</span>
+      <span className="an-cap q3">3 · Cada color es un deporte</span><span className="an-cap q4">4 · Tocá una zona en el mapa</span>
+      <span className="an-cap q5">5 · Te dice qué deporte es</span></div>`;
   if (p.anim === 'grabar') return html`<div className="tuto-media an an-grabar">
       <div className="an-map" style=${fondo}></div>
       <svg className="an-traza" viewBox="0 0 360 180" preserveAspectRatio="none"><path d="M40 150 C 90 140, 110 100, 150 95 S 230 70, 250 55 S 300 30, 330 28" fill="none" stroke="#0a7c8c" stroke-width="5" stroke-linecap="round" pathLength="100"/></svg>
