@@ -69,7 +69,9 @@ App web tipo "Google Maps / Wavve" para navegar los ríos y arroyos del Delta de
 
 43. **Capas solo en su botón, tipo persiana (v31, 13/11/2026, en `test`):** se sacó la pestaña Capas del menú ☰ (quedan Puntos, Historial y Ajustes). El panel de Capas tiene arriba una barrita: arrastrándola para abajo se esconde y queda asomado solo el título; para arriba (o tocando la barrita o el título) vuelve a abrirse. Mientras se arrastra, el panel sigue al dedo.
 
-**Estado actual:** versión `v31` en `test` (botón de Capas tipo persiana y tutorial), `v28` en `main`. La carpeta local trabaja en la rama `test`.
+44. **Capas se cierra al tocar afuera (v32, 13/11/2026, en `test`):** con el panel de Capas abierto, tocar fuera de él (mapa, menú ☰, buscador u otros botones) lo cierra en vez de abrir otra cosa encima. Abierto, el resto de la pantalla queda bloqueado con un velo suave; plegado, el mapa se puede arrastrar y pellizcar, y un toque lo cierra.
+
+**Estado actual:** versión `v32` en `test` (botón de Capas tipo persiana y tutorial), `v28` en `main`. La carpeta local trabaja en la rama `test`.
 
 ## Funciones actuales
 

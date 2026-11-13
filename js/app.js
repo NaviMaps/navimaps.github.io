@@ -116,7 +116,7 @@ function App(){
   var drawnPois=useRef([]),drawnRio=useRef([]);
   var cv=useRef(null),sc=useRef(null),scl=useRef(null),raf=useRef(0),tiles=useRef({}),drawRef=useRef(null);
   var D=useRef({}),wid=useRef(null),first=useRef(true),lock=useRef(null),trk=useRef(track),kmR=useRef(0),recR=useRef(false),tt=useRef(0),saveT=useRef(0),fr=useRef(0);
-  D.current={zn:zn,rio:rio,pin:pin,marks:marks,track:track,me:me,dest:dest,route:route,layers:layers,orig:orig,res:res,sel:sel,cruise:cruise};
+  D.current={capas:capas,zn:zn,rio:rio,pin:pin,marks:marks,track:track,me:me,dest:dest,route:route,layers:layers,orig:orig,res:res,sel:sel,cruise:cruise};
 
   // Guarda todo en el celular. save() junta varios cambios en una sola escritura:
   // normalmente espera 0,4 s; mientras grabás, escribe como mucho cada 15 s (el recorrido puede ser largo).
@@ -282,7 +282,9 @@ function App(){
       var cr2=Math.cos(v.r),sr2=Math.sin(v.r),c2=px(v.lat,v.lng,v.z),q2=ll(c2.x-(dx*cr2+dy*sr2),c2.y-(-dx*sr2+dy*cr2),v.z);v.lat=Math.max(-85,Math.min(85,q2.lat));v.lng=q2.lng;G.ptr[e.pointerId]=np;req()}
     function up(e){var np=pos(e);clearTimeout(G.lp);delete G.ptr[e.pointerId];G.pinch=null;
       if(!Object.keys(G.ptr).length&&G.gs&&G.gs.maxp===2&&Date.now()-G.gs.t<350&&G.gs.moved<14&&G.gs.mid){var m=G.gs.mid;G.gs=null;G.lastTap=0;animZoom(m.x,m.y,-1);return}
-      if(!Object.keys(G.ptr).length){if(G.last&&G.last.moved<8&&Date.now()-G.last.t<300){var hit=tapMark(np);
+      if(!Object.keys(G.ptr).length){if(G.last&&G.last.moved<8&&Date.now()-G.last.t<300){
+        if(D.current.capas){setCapas(false);G.lastTap=0;return}  // con el panel de capas abierto, tocar el mapa solo lo cierra
+        var hit=tapMark(np);
         if(hit>=0){var hm=D.current.marks[hit];setName('');setPin({lat:hm.lat,lng:hm.lng,mi:hit});G.lastTap=0;save();return}
         var hr=tapRio(np);if(hr){setPin(null);setCapas(false);setRio(hr.id);G.lastTap=0;save();return}
         var hp=tapPoi(np);if(hp){setName('');setZn(null);setPin({lat:hp.lat,lng:hp.lng,poi:hp});G.lastTap=0;save();return}
@@ -468,7 +470,12 @@ function App(){
   list.sort(function(a,b){var g=(a.r.mi!=null?0:1)-(b.r.mi!=null?0:1);return g||(sortBy==='near'?a.d-b.d:a.r.name.localeCompare(b.r.name))});
   var dst=rec?'Grabando… '+(km/1.852).toFixed(2)+' mn':(km?(km/1.852).toFixed(2)+' mn recorridas':'Sin grabar');
 
-  return html`<div id="app">
+  // Con el panel de capas abierto, tocar cualquier cosa fuera de él (menú, buscador, botones) lo cierra.
+  // El mapa se maneja aparte: arrastrar o pellizcar no lo cierra (sirve con el panel plegado); un toque sí.
+  function fueraDeCapas(e){if(!D.current.capas)return;var t=e.target;
+    if(t.closest&&(t.closest('#capascard')||t.closest('[aria-label="Capas"]')))return;if(t.tagName==='CANVAS')return;setCapas(false)}
+  return html`<div id="app" onPointerDownCapture=${fueraDeCapas}>
+    ${capas&&!capCol?html`<div id="capscrim"></div>`:null}
     <canvas ref=${cv}></canvas>
     <div className="hud">${ES_TEST?html`<small style=${{background:'#d9480f',color:'#fff',fontWeight:700,borderRadius:6,padding:'1px 6px',alignSelf:'flex-start'}}>PRUEBA</small>`:null}<b>${spd} nd</b><small>${dst}</small><div className="scale" ref=${sc}></div><small ref=${scl}></small>${wx&&layers.wx?html`<small>Viento ${Math.round(wx.wind_speed_10m)} nd ${DIRS[Math.round(wx.wind_direction_10m/45)%8]} · ráf. ${Math.round(wx.wind_gusts_10m)}</small><small>${Math.round(wx.temperature_2m)} °C</small>`:null}${rioH?html`<button className="rioh" onClick=${function(){setRio(rioH.e.id)}}>🌊 ${rioH.e.n.split(' (')[0]} <b>${metros(rioH.u.v)}</b> ${tendencia(rioH.e)}</button>`:null}${shnAviso?html`<button className="rioh" style=${{color:'#c92a2a',fontWeight:700}} onClick=${function(){setRio((rioH&&rioH.e.id)||52)}}>⚠ Aviso del SHN</button>`:null}${online?null:html`<small style=${{color:'var(--danger)',fontWeight:600}}>Sin señal</small>`}</div>
     <div className="atrib">© ${ESTILOS[sat?'sat':estilo].at}${layers.sea?' · OpenSeaMap':''}</div>
