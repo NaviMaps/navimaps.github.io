@@ -43,12 +43,14 @@ App web tipo "Google Maps / Wavve" para navegar los ríos y arroyos del Delta de
 
 30. **Vidrio estilo iPhone (v19, 13/11/2026, en `test`):** rediseño del "liquid glass", más transparente y parecido al de iOS: poco desenfoque (7 px) con colores reforzados de lo que hay detrás, brillo fino en el borde de arriba, sombra suave y bordes más redondeados. Dos niveles: botones, buscador y recuadro de datos muy transparentes; menú, tarjetas y paneles con texto algo más cubiertos para leerse bien sobre el mapa o el satélite. Los botones de adentro de los paneles también son de vidrio. El menú flota separado del borde, con rebote al abrir, y los botones tienen un rebote corto al tocarlos. Versión para modo oscuro con más contraste.
 
-**Estado actual:** versión `v19` en `test` (gestos de zoom y vidrio nuevo), `v17` en `main`. La carpeta local trabaja en la rama `test`.
+31. **Estilos de mapa y señales náuticas (v20, 13/11/2026, en `test`):** selector en ☰ › Capas › Estilo de mapa con OpenStreetMap, CARTO Voyager, CARTO Claro, CARTO Oscuro, Esri Océano y Satélite (se recuerda el elegido; el botón 🛰 sigue alternando satélite). Los de CARTO usan mosaicos de doble resolución para que se vean nítidos en el iPhone; Esri Océano llega hasta zoom 16 y más cerca agranda esos mosaicos. Interruptor "Señales náuticas" con la capa de OpenSeaMap (boyas, balizas, faros, marinas) encima de cualquier estilo, desde zoom 9. La atribución de abajo del recuadro cambia según el estilo. Código en `js/estilos.js`; `sw.js` guarda también estos mosaicos para usar sin señal. Stadia y MapTiler no se agregaron porque piden registrarse y una clave.
+
+**Estado actual:** versión `v20` en `test` (gestos de zoom, vidrio nuevo y estilos de mapa), `v17` en `main`. La carpeta local trabaja en la rama `test`.
 
 ## Funciones actuales
 
 ### Mapa
-- Mapa base de OpenStreetMap y **vista satelital** (Esri), con botón para alternar.
+- **Estilos de mapa** (OpenStreetMap, CARTO Voyager, Claro y Oscuro, Esri Océano) y **vista satelital** (Esri), más la capa de **señales náuticas** de OpenSeaMap.
 - Arrastre, zoom con pellizco, doble toque para acercar y toque con dos dedos para alejar (los dos con animación suave).
 - **Rotación con dos dedos** con zona muerta de unos 15° (así el zoom no gira el mapa sin querer).
 - **Brújula** arriba a la derecha; al tocarla vuelve el norte arriba con animación.
@@ -109,6 +111,7 @@ App web tipo "Google Maps / Wavve" para navegar los ríos y arroyos del Delta de
 | `js/alturas.js` | Lee `alturas.json`; tendencia, estado, estación más cercana y gráfico |
 | `scripts/alturas.py` | Baja las alturas del INA y las mareas del SHN y arma `alturas.json` (lo corre GitHub cada 30 min) |
 | `zonas.json` | Zonas de práctica deportiva de la Prefectura (34 zonas, pasadas de los croquis) |
+| `js/estilos.js` | Estilos de mapa base (de dónde sale cada uno, zoom máximo, atribución) y capa de OpenSeaMap |
 | `js/zonas.js` | Lee `zonas.json`, colores por deporte y qué zona se tocó |
 | `sw.js` | Service worker: guarda la app, los cauces y los mosaicos vistos para usarla sin señal |
 | `manifest.webmanifest` | Nombre, colores e íconos para instalarla en la pantalla de inicio |

@@ -5,6 +5,7 @@ import { PREFS, solve } from './ruta.js';
 import { CATS, ovp, local, waterEls, parseRes, dTo, lugares, lugaresFecha } from './datos.js';
 import { PRE, ES_TEST } from './entorno.js';
 import { exportar, leer, unirPuntos } from './respaldo.js';
+import { ESTILOS, ORDEN, SEAMARK } from './estilos.js';
 import { zonas, zonaEn, DEPORTES, fuenteZonas, largo } from './zonas.js';
 import { alturas, ultimo, fresca, tendencia, estado, hace, metros, hora, dia, cercana, mareas, grafico } from './alturas.js';
 
@@ -53,6 +54,10 @@ function App(){
   var _sa=useState(!!sv.current.sat),sat=_sa[0],setSat=_sa[1];
   var _w=useState(null),wx=_w[0],setWx=_w[1];
   var satR=useRef(!!sv.current.sat);
+  // Estilo del mapa base (cuando no está el satélite)
+  var _es=useState(ESTILOS[sv.current.estilo]&&sv.current.estilo!=='sat'?sv.current.estilo:'osm'),estilo=_es[0],setEstilo=_es[1];
+  var estR=useRef(estilo);
+  function base(){return satR.current?'sat':estR.current}
   var _d=useState(null),dest=_d[0],setDest=_d[1];
   var _sp=useState(sv.current.cruise||8),cruise=_sp[0],setCruise=_sp[1];
   var _ro=useState(null),route=_ro[0],setRoute=_ro[1];
@@ -103,19 +108,20 @@ function App(){
   // saveNow() escribe ya: al detener la grabación y cuando la app pasa a segundo plano.
   function saveNow(){clearTimeout(saveT.current);saveT.current=0;
     try{localStorage.setItem(PRE+'delta',JSON.stringify({marks:D.current.marks,track:trk.current,layers:D.current.layers,
-      lat:V.current.lat,lng:V.current.lng,z:V.current.z,cruise:D.current.cruise,sat:satR.current}))}catch(e){}}
+      lat:V.current.lat,lng:V.current.lng,z:V.current.z,cruise:D.current.cruise,sat:satR.current,estilo:estR.current}))}catch(e){}}
   function save(){if(!saveT.current)saveT.current=setTimeout(saveNow,recR.current?15000:400)}
   function req(){if(!raf.current)raf.current=requestAnimationFrame(function(){raf.current=0;if(drawRef.current)drawRef.current()})}
   function say(t){setToast(t);clearTimeout(tt.current);tt.current=setTimeout(function(){setToast('')},1800)}
   // Mosaicos del mapa en memoria. Cada uno anota en qué cuadro se usó por última vez (used)
   // para poder descartar los más viejos cuando hay más de MAX_TILES_MEM.
-  function tkey(z,x,y){return (satR.current?'s/':'o/')+z+'/'+x+'/'+y}
+  function tkey(z,x,y,lay){return (lay||base())+'/'+z+'/'+x+'/'+y}
   function peek(z,x,y){return tiles.current[tkey(z,x,y)]}
   function trimTiles(){var T=tiles.current,ks=Object.keys(T);if(ks.length<=MAX_TILES_MEM)return;
     ks.sort(function(a,b){return T[a].used-T[b].used});
     ks.slice(0,ks.length-MAX_TILES_MEM).forEach(function(k){T[k].onload=null;delete T[k]})}
-  function tile(z,x,y){var sat=satR.current,k=tkey(z,x,y),T=tiles.current;if(T[k]){T[k].used=fr.current;return T[k]}var im=new Image();im.used=fr.current;im.onload=function(){im.ok=1;req()};im.onerror=function(){delete T[k]};im.crossOrigin='anonymous';
-    im.src=sat?'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/'+z+'/'+y+'/'+x:'https://tile.openstreetmap.org/'+z+'/'+x+'/'+y+'.png';T[k]=im;return im}
+  // Mosaico de la capa lay (estilo base o 'sea' para las señales náuticas). Si falla, se marca para no pedirlo de nuevo en seguida.
+  function tile(z,x,y,lay){lay=lay||base();var k=tkey(z,x,y,lay),T=tiles.current;if(T[k]){T[k].used=fr.current;return T[k]}var im=new Image();im.used=fr.current;im.onload=function(){im.ok=1;req()};im.onerror=function(){im.bad=1;setTimeout(function(){if(T[k]===im)delete T[k]},30000)};im.crossOrigin='anonymous';
+    im.src=(lay==='sea'?SEAMARK:ESTILOS[lay]).url(z,x,y);T[k]=im;return im}
 
   drawRef.current=function(){
     var c=cv.current;if(!c)return;var ctx=c.getContext('2d'),w=c.width/dpr,h=c.height/dpr,v=V.current,d=D.current;
@@ -131,12 +137,16 @@ function App(){
     for(var gx=-(ox%64)-Math.ceil(ex/64)*64;gx<w+ex;gx+=64){ctx.moveTo(gx,-ey);ctx.lineTo(gx,h+ey)}
     for(var gy=-(oy%64)-Math.ceil(ey/64)*64;gy<h+ey;gy+=64){ctx.moveTo(-ex,gy);ctx.lineTo(w+ex,gy)}
     ctx.stroke();
-    var zt=Math.max(0,Math.min(18,Math.round(v.z))),s=Math.pow(2,v.z-zt),ts=256*s,n=Math.pow(2,zt);
+    var EST=ESTILOS[base()],zt=Math.max(0,Math.min(EST.max,18,Math.round(v.z))),s=Math.pow(2,v.z-zt),ts=256*s,n=Math.pow(2,zt);
     for(var tx=Math.floor((ox-ex)/ts);tx<=Math.floor((ox+w+ex)/ts);tx++)for(var ty=Math.floor((oy-ey)/ts);ty<=Math.floor((oy+h+ey)/ts);ty++){
       if(ty<0||ty>=n)continue;var X=((tx%n)+n)%n,im=tile(zt,X,ty);
       if(im.ok)ctx.drawImage(im,tx*ts-ox,ty*ts-oy,ts+.5,ts+.5);
       else if(zt>0){// mientras carga, muestra el cuarto que corresponde del mosaico de un zoom menos
-        var pi=peek(zt-1,X>>1,ty>>1);if(pi&&pi.ok){pi.used=fr.current;ctx.drawImage(pi,(X&1)*128,(ty&1)*128,128,128,tx*ts-ox,ty*ts-oy,ts+.5,ts+.5)}}}
+        var pi=peek(zt-1,X>>1,ty>>1);if(pi&&pi.ok){pi.used=fr.current;var hw=(pi.naturalWidth||256)/2;ctx.drawImage(pi,(X&1)*hw,(ty&1)*hw,hw,hw,tx*ts-ox,ty*ts-oy,ts+.5,ts+.5)}}}
+    // Señales náuticas de OpenSeaMap encima del mapa (desde zoom 9)
+    if(d.layers.sea&&v.z>=SEAMARK.min){var zs=Math.min(SEAMARK.max,Math.round(v.z)),s2=Math.pow(2,v.z-zs),ts2=256*s2,n2=Math.pow(2,zs);
+      for(var sx=Math.floor((ox-ex)/ts2);sx<=Math.floor((ox+w+ex)/ts2);sx++)for(var sy=Math.floor((oy-ey)/ts2);sy<=Math.floor((oy+h+ey)/ts2);sy++){
+        if(sy<0||sy>=n2)continue;var SX=((sx%n2)+n2)%n2,si=tile(zs,SX,sy,'sea');if(si.ok)ctx.drawImage(si,sx*ts2-ox,sy*ts2-oy,ts2+.5,ts2+.5)}}
     if(fr.current%30===0)trimTiles();
     function P(p){var q=px(p.lat,p.lng,v.z);return{x:q.x-ox,y:q.y-oy}}
     if(d.layers.track&&d.track.length>1){ctx.strokeStyle=C.accent;ctx.lineWidth=4;ctx.lineJoin='round';ctx.beginPath();d.track.forEach(function(p,i){var q=P(p);i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y)});ctx.stroke()}
@@ -402,7 +412,9 @@ function App(){
     }).catch(function(er){say(er.message||'No pude leer el archivo')})}
   function del(i){setMarks(marks.filter(function(_,j){return j!==i}))}
 
-  function toggleSat(){satR.current=!satR.current;setSat(satR.current);req()}
+  function toggleSat(){satR.current=!satR.current;setSat(satR.current);req();save()}
+  // Elegir estilo en Capas: 'sat' prende el satélite; cualquier otro lo apaga y cambia el mapa base
+  function elegirEstilo(k){if(k==='sat'){satR.current=true;setSat(true)}else{satR.current=false;setSat(false);estR.current=k;setEstilo(k)}req();setTimeout(saveNow,0)}
   useEffect(function(){
     var alive=true;
     function go(){var v=V.current,m=D.current.me,la=m?m.lat:v.lat,lo=m?m.lng:v.lng;
@@ -428,7 +440,7 @@ function App(){
 
   return html`<div id="app">
     <canvas ref=${cv}></canvas>
-    <div className="hud">${ES_TEST?html`<small style=${{background:'#d9480f',color:'#fff',fontWeight:700,borderRadius:6,padding:'1px 6px',alignSelf:'flex-start'}}>PRUEBA</small>`:null}<b>${spd} nd</b><small>${dst}</small><div className="scale" ref=${sc}></div><small ref=${scl}></small>${wx&&layers.wx?html`<small>Viento ${Math.round(wx.wind_speed_10m)} nd ${DIRS[Math.round(wx.wind_direction_10m/45)%8]} · ráf. ${Math.round(wx.wind_gusts_10m)}</small><small>${Math.round(wx.temperature_2m)} °C</small>`:null}${rioH?html`<button className="rioh" onClick=${function(){setRio(rioH.e.id)}}>🌊 ${rioH.e.n.split(' (')[0]} <b>${metros(rioH.u.v)}</b> ${tendencia(rioH.e)}</button>`:null}${shnAviso?html`<button className="rioh" style=${{color:'#c92a2a',fontWeight:700}} onClick=${function(){setRio((rioH&&rioH.e.id)||52)}}>⚠ Aviso del SHN</button>`:null}${online?null:html`<small style=${{color:'var(--danger)',fontWeight:600}}>Sin señal</small>`}<small>© ${sat?'Esri':'OpenStreetMap'}</small></div>
+    <div className="hud">${ES_TEST?html`<small style=${{background:'#d9480f',color:'#fff',fontWeight:700,borderRadius:6,padding:'1px 6px',alignSelf:'flex-start'}}>PRUEBA</small>`:null}<b>${spd} nd</b><small>${dst}</small><div className="scale" ref=${sc}></div><small ref=${scl}></small>${wx&&layers.wx?html`<small>Viento ${Math.round(wx.wind_speed_10m)} nd ${DIRS[Math.round(wx.wind_direction_10m/45)%8]} · ráf. ${Math.round(wx.wind_gusts_10m)}</small><small>${Math.round(wx.temperature_2m)} °C</small>`:null}${rioH?html`<button className="rioh" onClick=${function(){setRio(rioH.e.id)}}>🌊 ${rioH.e.n.split(' (')[0]} <b>${metros(rioH.u.v)}</b> ${tendencia(rioH.e)}</button>`:null}${shnAviso?html`<button className="rioh" style=${{color:'#c92a2a',fontWeight:700}} onClick=${function(){setRio((rioH&&rioH.e.id)||52)}}>⚠ Aviso del SHN</button>`:null}${online?null:html`<small style=${{color:'var(--danger)',fontWeight:600}}>Sin señal</small>`}<small>© ${ESTILOS[sat?'sat':estilo].at}${layers.sea?' · OpenSeaMap':''}</small></div>
     <div className="fabs">
       <button className="fab" aria-label="Mi posición" onClick=${locate}>◎</button>
       <button className="fab" aria-label="Satélite" onClick=${toggleSat}>${sat?'🗺':'🛰'}</button>
@@ -480,7 +492,9 @@ function App(){
             <div className="lr"><span>Recorrido grabado</span>${sw(layers.track,function(){setLayer('track')})}</div>
             <div className="lr"><span>Destino y ruta</span>${sw(layers.route,function(){setLayer('route')})}</div>
             <div className="lr"><span>Viento y clima</span>${sw(layers.wx,function(){setLayer('wx')})}</div>
-            <div className="lr"><span>Vista satelital</span>${sw(sat,toggleSat)}</div>
+            <div className="lr" style=${{flexWrap:'wrap',padding:'8px 0'}}><span>Estilo de mapa</span><div className="estilos">${ORDEN.map(function(k){var on=sat?k==='sat':k===estilo;
+              return html`<button key=${k} className=${'mini'+(on?' on':'')} onClick=${function(){elegirEstilo(k)}}>${ESTILOS[k].n}</button>`})}</div></div>
+            <div className="lr"><span>Señales náuticas <small style=${{color:'var(--muted)'}}>(boyas y balizas, OpenSeaMap)</small></span>${sw(!!layers.sea,function(){setLayer('sea')})}</div>
             <div className="lr"><span>Zonas deportivas <small style=${{color:'var(--muted)'}}>(Prefectura)</small></span>${sw(layers.zonas!==false,function(){var n=Object.assign({},layers);n.zonas=layers.zonas===false;setLayers(n)})}</div>
             ${layers.zonas!==false?html`<div className="zleg">${Object.keys(DEPORTES).map(function(k){var dp=DEPORTES[k];return html`<span key=${k}><i style=${{background:dp.c}}></i>${dp.n}</span>`})}</div>`:null}
             <div className="lr"><span>Alturas del río</span>${sw(layers.rio!==false,function(){var n=Object.assign({},layers);n.rio=layers.rio===false;setLayers(n)})}</div>
