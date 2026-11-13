@@ -2,7 +2,7 @@
 // React y htm vienen de los <script> del index.html (variables globales).
 import { DIRS, NICE, px, ll, dist, bearing, norm, flex, fmtT } from './geo.js';
 import { PREFS, solve } from './ruta.js';
-import { CATS, ovp, local, waterEls, parseRes, dTo } from './datos.js';
+import { CATS, ovp, local, waterEls, parseRes, dTo, lugares, lugaresFecha } from './datos.js';
 import { PRE, ES_TEST } from './entorno.js';
 import { exportar, leer, unirPuntos } from './respaldo.js';
 
@@ -72,6 +72,8 @@ function App(){
   var _co=useState(false),col=_co[0],setCol=_co[1];
   var _pf=useState(function(){try{var x=parseInt(localStorage.getItem(PRE+'delta_pref'),10);return x>=0&&x<=2?x:2}catch(e){return 2}}),pref=_pf[0],setPref=_pf[1];
   var _lc=useState(local()?local().length:0),lc=_lc[0],setLc=_lc[1];
+  var _lg=useState(lugares()?lugares().length:0),lgc=_lg[0],setLgc=_lg[1];
+  useEffect(function(){function f(){setLgc(lugares()?lugares().length:0);req()}window.addEventListener('delta-lugares',f);f();return function(){window.removeEventListener('delta-lugares',f)}},[]);
   useEffect(function(){function f(){setLc(local()?local().length:0)}window.addEventListener('delta-local',f);f();return function(){window.removeEventListener('delta-local',f)}},[]);
   function setPrefP(i){setPref(i);try{localStorage.setItem(PRE+'delta_pref',String(i))}catch(e){}}
   var _th=useState(function(){try{return localStorage.getItem(PRE+'delta_theme')||'auto'}catch(e){return 'auto'}}),theme=_th[0],setTheme=_th[1];
@@ -128,11 +130,22 @@ function App(){
     if(fr.current%30===0)trimTiles();
     function P(p){var q=px(p.lat,p.lng,v.z);return{x:q.x-ox,y:q.y-oy}}
     if(d.layers.track&&d.track.length>1){ctx.strokeStyle=C.accent;ctx.lineWidth=4;ctx.lineJoin='round';ctx.beginPath();d.track.forEach(function(p,i){var q=P(p);i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y)});ctx.stroke()}
-    (d.res||[]).forEach(function(r){if(r.mi!=null)return;var on=r.i===d.sel;
+    (d.res||[]).forEach(function(r){if(r.mi!=null||(r.poi&&lugares()&&d.layers.pois!==false&&v.z>=13))return;var on=r.i===d.sel;
       if(r.lines){ctx.strokeStyle=on?'#ff1f1f':'rgba(255,40,40,.65)';ctx.lineWidth=on?9:6;ctx.lineCap='round';ctx.lineJoin='round';
         r.lines.forEach(function(ln){ctx.beginPath();ln.forEach(function(p,j){var q=P(p);j?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y)});ctx.stroke()});ctx.lineCap='butt'}
       else{var q=P(r);ctx.fillStyle=on?'#ff7a1a':'#7c5cff';ctx.strokeStyle='#fff';ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(q.x,q.y,on?10:7,0,7);ctx.fill();ctx.stroke()}
       if(on){var lq=P(r);ctx.save();ctx.translate(lq.x,lq.y);ctx.rotate(-v.r);ctx.font='600 13px system-ui';ctx.lineWidth=3;ctx.strokeStyle=C.bg;ctx.strokeText(r.name,12,-12);ctx.fillStyle=C.fg;ctx.fillText(r.name,12,-12);ctx.restore()}});
+    // Lugares del archivo lugares.json: ícono desde zoom 13, nombre desde zoom 16
+    var LG=lugares();
+    if(LG&&d.layers.pois!==false&&v.z>=13){ctx.textAlign='center';ctx.textBaseline='middle';
+      LG.forEach(function(x){var q=P(x);if(q.x<-ex-20||q.x>w+ex+20||q.y<-ey-20||q.y>h+ey+20)return;
+        var on=d.pin&&d.pin.poi&&d.pin.poi.lat===x.lat&&d.pin.poi.lng===x.lng;
+        ctx.save();ctx.translate(q.x,q.y);ctx.rotate(-v.r);
+        ctx.fillStyle='rgba(255,255,255,.92)';ctx.strokeStyle=on?C.accent:'rgba(0,0,0,.25)';ctx.lineWidth=on?4:1;ctx.beginPath();ctx.arc(0,0,on?15:12,0,7);ctx.fill();ctx.stroke();
+        ctx.font='14px system-ui';ctx.fillStyle='#000';ctx.fillText(x.e,0,1);
+        if(v.z>=16&&x.named){ctx.textAlign='left';ctx.font='600 12px system-ui';ctx.lineWidth=3;ctx.strokeStyle=C.bg;ctx.strokeText(x.name,16,0);ctx.fillStyle=C.fg;ctx.fillText(x.name,16,0);ctx.textAlign='center'}
+        ctx.restore()});
+      ctx.textAlign='start';ctx.textBaseline='alphabetic'}
     (d.layers.marks?d.marks:[]).forEach(function(m){var q=P(m);ctx.fillStyle=C.danger;ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.beginPath();ctx.arc(q.x,q.y,8,0,7);ctx.fill();ctx.stroke();
       ctx.font='600 13px system-ui';ctx.lineWidth=3;ctx.strokeStyle=C.bg;ctx.save();ctx.translate(q.x,q.y);ctx.rotate(-v.r);ctx.strokeText(m.name,12,5);ctx.fillStyle=C.fg;ctx.fillText(m.name,12,5);ctx.restore()});
     if(d.dest&&d.layers.route){var dq=P(d.dest);if(d.route&&d.route.ok){var sp=d.route.pts.map(P),cum=[0],tot=0;
@@ -152,7 +165,7 @@ function App(){
       ctx.fillStyle='#e8a317';ctx.strokeStyle='#fff';ctx.lineWidth=3;ctx.beginPath();ctx.arc(dq.x,dq.y,10,0,7);ctx.fill();ctx.stroke()}
     if(d.orig&&d.layers.route){var oq=P(d.orig);ctx.fillStyle='#2e9e5b';ctx.strokeStyle='#fff';ctx.lineWidth=3;ctx.beginPath();ctx.arc(oq.x,oq.y,10,0,7);ctx.fill();ctx.stroke()}
     if(d.pin&&d.pin.mi!=null){var sq=P(d.pin);ctx.strokeStyle=C.accent;ctx.lineWidth=4;ctx.beginPath();ctx.arc(sq.x,sq.y,15,0,7);ctx.stroke()}
-    else if(d.pin){var pq=P(d.pin);ctx.fillStyle='#e5484d';ctx.strokeStyle='#fff';ctx.lineWidth=3;ctx.beginPath();ctx.arc(pq.x,pq.y-22,11,Math.PI*0.8,Math.PI*2.2);ctx.lineTo(pq.x,pq.y);ctx.closePath();ctx.fill();ctx.stroke();
+    else if(d.pin&&!d.pin.poi){var pq=P(d.pin);ctx.fillStyle='#e5484d';ctx.strokeStyle='#fff';ctx.lineWidth=3;ctx.beginPath();ctx.arc(pq.x,pq.y-22,11,Math.PI*0.8,Math.PI*2.2);ctx.lineTo(pq.x,pq.y);ctx.closePath();ctx.fill();ctx.stroke();
       ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(pq.x,pq.y-22,4,0,7);ctx.fill()}
     if(d.me){var q=P(d.me);ctx.fillStyle='rgba(10,124,140,.25)';ctx.beginPath();ctx.arc(q.x,q.y,18,0,7);ctx.fill();
       ctx.fillStyle='#0a7c8c';ctx.strokeStyle='#fff';ctx.lineWidth=3;ctx.beginPath();ctx.arc(q.x,q.y,8,0,7);ctx.fill();ctx.stroke()}
@@ -169,6 +182,10 @@ function App(){
   function toLL(sx,sy){var v=V.current,w=cv.current.clientWidth,h=cv.current.clientHeight,c=px(v.lat,v.lng,v.z),fx=sx-w/2,fy=sy-h/2,cr=Math.cos(v.r),sr=Math.sin(v.r);
     return ll(c.x+fx*cr+fy*sr,c.y-fx*sr+fy*cr,v.z)}
   // ¿El toque cayó sobre un punto guardado? Devuelve su número o -1 (radio de 24 px)
+  // ¿El toque cayó sobre un lugar del archivo? Devuelve el lugar o null (radio de 22 px)
+  function tapPoi(sp){var d=D.current,L=lugares(),v=V.current;if(!L||d.layers.pois===false||v.z<13)return null;
+    var g=toLL(sp.x,sp.y),t=px(g.lat,g.lng,v.z),best=null,bd=22;
+    L.forEach(function(x){var q=px(x.lat,x.lng,v.z),dd=Math.hypot(q.x-t.x,q.y-t.y);if(dd<bd){bd=dd;best=x}});return best}
   function tapMark(sp){var d=D.current;if(!d.layers.marks)return -1;var v=V.current,g=toLL(sp.x,sp.y),t=px(g.lat,g.lng,v.z),best=-1,bd=24;
     d.marks.forEach(function(m,i){var q=px(m.lat,m.lng,v.z),dd=Math.hypot(q.x-t.x,q.y-t.y);if(dd<bd){bd=dd;best=i}});return best}
   useEffect(function(){
@@ -190,7 +207,8 @@ function App(){
     function up(e){var np=pos(e);clearTimeout(G.lp);delete G.ptr[e.pointerId];G.pinch=null;
       if(!Object.keys(G.ptr).length){if(G.last&&G.last.moved<8&&Date.now()-G.last.t<300){var hit=tapMark(np);
         if(hit>=0){var hm=D.current.marks[hit];setName('');setPin({lat:hm.lat,lng:hm.lng,mi:hit});G.lastTap=0;save();return}
-        if(D.current.pin&&D.current.pin.mi!=null)setPin(null);
+        var hp=tapPoi(np);if(hp){setName('');setPin({lat:hp.lat,lng:hp.lng,poi:hp});G.lastTap=0;save();return}
+        if(D.current.pin&&(D.current.pin.mi!=null||D.current.pin.poi))setPin(null);
         var n=Date.now();if(n-G.lastTap<320){zoomAt(np.x,np.y,v.z+1);G.lastTap=0}else G.lastTap=n}save()}}
     function ctxm(e){e.preventDefault()}
     function wheel(e){e.preventDefault();var p=pos(e);zoomAt(p.x,p.y,v.z-e.deltaY*0.002);save()}
@@ -229,7 +247,9 @@ function App(){
   function pinDone(){setPin(null);setName('');if(document.activeElement&&document.activeElement.blur)document.activeElement.blur()}
   function addMark(){if(!pin)return;var nm=name.trim()||('Punto '+(marks.length+1));
     setMarks(marks.concat([{name:nm,lat:pin.lat,lng:pin.lng}]));pinDone();say('Guardado: '+nm)}
-  function pinDest(){goDest({lat:pin.lat,lng:pin.lng,name:pin.mi!=null&&marks[pin.mi]?marks[pin.mi].name:''});pinDone()}
+  function pinDest(){goDest({lat:pin.lat,lng:pin.lng,name:pin.poi?pin.poi.name:pin.mi!=null&&marks[pin.mi]?marks[pin.mi].name:''});pinDone()}
+  function openPoi(r){setSopen(false);if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();
+    setName('');setPin({lat:r.lat,lng:r.lng,poi:r});flyTo(r.lat,r.lng,Math.max(V.current.z,15))}
   // Cómo llegar: marca el destino y calcula la ruta por agua apenas haya desde dónde salir
   var autoR=useRef(false);
   function goDest(p){setDest(p);setCol(false);setSopen(false);autoR.current=true;
@@ -254,7 +274,7 @@ function App(){
   function stopSearch(){sq.current++;setSearching(false)}
   function clearSearch(){stopSearch();setQ('');setRes([]);setSel(-1);setSopen(false)}
   function pick(r){setSel(r.i);setSopen(false);if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();
-    if(r.lines){var pts=[];r.lines.forEach(function(l){pts=pts.concat(l)});fitPts(pts)}else flyTo(r.lat,r.lng,16)}
+    if(r.lines){var pts=[];r.lines.forEach(function(l){pts=pts.concat(l)});fitPts(pts)}else openPoi(r)}
   // Búsqueda unificada: tus puntos guardados + cauces (archivo local, al instante) + lugares (servidor).
   // Si coincide un punto guardado, va directo a su pin y abre su tarjeta.
   var sq=useRef(0);
@@ -265,14 +285,22 @@ function App(){
     setQ(t);setSopen(true);setSel(-1);setSearching(true);addHist(t);
     var v=V.current,la=Math.round(v.lat*20)/20,lo=Math.round(v.lng*20)/20,cat=null,n=norm(t),body;
     CATS.forEach(function(c){if(!cat&&c.re.test(n))cat=c});
-    var first=[];
+    var first=[],L=lugares();
+    function cl(x){return Object.assign({},x)}
+    if(cat&&L){var ref=D.current.me||{lat:v.lat,lng:v.lng},dc=L.filter(function(x){return x.c===cat.c});
+      var cerca=dc.filter(function(x){return dist(ref,x)<=20});first=num((cerca.length?cerca:dc).map(cl));setRes(first);
+      if(first.length===1)openPoi(first[0]);else if(first.length)fitPts(first)}
     if(!cat){
       var mine=D.current.marks.map(function(m,i){return{name:m.name,kind:'Tu punto guardado',lat:m.lat,lng:m.lng,lines:null,mi:i}})
         .filter(function(x){return norm(x.name).indexOf(n)>=0});
       var nr=n.replace(/[^a-z0-9 ]/g,''),loc=local()?parseRes(local().filter(function(x){return x.tags&&x.tags.waterway&&x.tags.name&&norm(x.tags.name).indexOf(nr)>=0})):[];
-      first=num(mine.concat(loc));setRes(first);
+      var lug=L?L.filter(function(x){return x.named&&norm(x.name).indexOf(n)>=0}).map(cl):[];
+      first=num(mine.concat(loc,lug));setRes(first);
       if(mine.length)openMark(mine[0].mi);
-      else if(loc.length){var p0=[];loc.forEach(function(x){x.lines.forEach(function(l){p0=p0.concat(l)})});fitPts(p0)}}
+      else if(first.length===1&&!first[0].lines)openPoi(first[0]);
+      else if(first.length){var p0=[];first.forEach(function(x){if(x.lines)x.lines.forEach(function(l){p0=p0.concat(l)});else p0.push(x)});fitPts(p0)}}
+    // Con lugares.json no hace falta el servidor: todo sale del celular, al instante y sin señal
+    if(L){setSearching(false);if(!first.length)say('No encontré resultados');return}
     if(cat)body='[out:json][timeout:25];('+cat.f.map(function(f){return 'nwr'+f+'(around:15000,'+la.toFixed(4)+','+lo.toFixed(4)+');'}).join('')+');out center tags 80;';
     else{var bb=[la-0.7,lo-0.7,la+0.7,lo+0.7].map(function(x){return x.toFixed(4)}).join(','),rx=flex(t);
       // Con cauces.json cargado, los cauces ya salieron del archivo: al servidor solo se le piden lugares
@@ -392,6 +420,7 @@ function App(){
           </div>`}):html`<div className="empty">Todavía no guardaste ningún punto. Usá Marcar en el mapa.</div>`)
         :tab==='capas'?html`<div>
             <div className="lr"><span>Puntos guardados</span>${sw(layers.marks,function(){setLayer('marks')})}</div>
+            <div className="lr"><span>Lugares <small style=${{color:'var(--muted)'}}>(combustible, restaurantes…)</small></span>${sw(layers.pois!==false,function(){var n=Object.assign({},layers);n.pois=layers.pois===false;setLayers(n)})}</div>
             <div className="lr"><span>Recorrido grabado</span>${sw(layers.track,function(){setLayer('track')})}</div>
             <div className="lr"><span>Destino y ruta</span>${sw(layers.route,function(){setLayer('route')})}</div>
             <div className="lr"><span>Viento y clima</span>${sw(layers.wx,function(){setLayer('wx')})}</div>
@@ -408,6 +437,7 @@ function App(){
             <div className="lr" style=${{flexWrap:'wrap',padding:'8px 0'}}><span>Prioridad de cauces</span><div className="seg" style=${{width:'100%'}}>${PREFS.map(function(p,i){
               return html`<button key=${i} className=${'tab'+(pref===i?' on':'')} style=${{padding:'0 6px'}} onClick=${function(){setPrefP(i)}}>${p.n}</button>`})}</div></div>
             <div className="lr"><span>Cauces guardados</span><small style=${{color:'var(--muted)'}}>${lc?lc.toLocaleString('es-AR')+' tramos ✓':'no cargados'}</small></div>
+            <div className="lr"><span>Lugares guardados</span><small style=${{color:'var(--muted)'}}>${lgc?lgc.toLocaleString('es-AR')+' lugares ✓'+(lugaresFecha()?' ('+lugaresFecha().split('-').reverse().join('/')+')':''):'no cargados'}</small></div>
             <div className="lr"><span>Copia de seguridad<br/><small style=${{color:'var(--muted)'}}>${marks.length} puntos · ${track.length>1?'con recorrido':'sin recorrido'}</small></span><div className="seg">
               <button className="mini" onClick=${doExport}>Exportar</button>
               <button className="mini" onClick=${function(){if(fileIn.current)fileIn.current.click()}}>Importar</button></div>
@@ -421,6 +451,14 @@ function App(){
         <small style=${{color:'var(--muted)',display:'block'}}>Punto guardado${me?' · a '+(dist(me,pin)/1.852).toFixed(1)+' mn ('+dist(me,pin).toFixed(1)+' km)':''}</small></div>
         <button className="clr" aria-label="Cerrar" onClick=${pinDone}>✕</button></div>
       <div className="row"><button className="btn p" onClick=${pinDest}>Cómo llegar</button>${dest?html`<button className="btn" onClick=${pinOrig}>Salir de acá</button>`:null}</div>
+    </div>`
+    :pin&&pin.poi?html`<div id="pincard">
+      <div className="row" style=${{alignItems:'center'}}><div style=${{flex:1}}><b style=${{fontSize:'18px'}}>${pin.poi.e?pin.poi.e+' ':''}${pin.poi.name}</b>
+        <small style=${{color:'var(--muted)',display:'block'}}>${pin.poi.kind}${me?' · a '+(dist(me,pin)/1.852).toFixed(1)+' mn ('+dist(me,pin).toFixed(1)+' km)':''}</small></div>
+        <button className="clr" aria-label="Cerrar" onClick=${pinDone}>✕</button></div>
+      <div className="row"><button className="btn p" onClick=${pinDest}>Cómo llegar</button>
+        <button className="btn" style=${{flex:'none',padding:'0 16px'}} aria-label="Guardar en tus puntos" onClick=${function(){setMarks(marks.concat([{name:pin.poi.name,lat:pin.lat,lng:pin.lng}]));say('Guardado: '+pin.poi.name);pinDone()}}>☆</button>
+        ${dest?html`<button className="btn" onClick=${pinOrig}>Salir de acá</button>`:null}</div>
     </div>`
     :pin?html`<div id="pincard">
       <div className="row"><b style=${{flex:1}}>Nuevo punto</b><button className="clr" aria-label="Cancelar" onClick=${pinDone}>✕</button></div>

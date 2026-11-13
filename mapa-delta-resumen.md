@@ -24,8 +24,9 @@ App web tipo "Google Maps / Wavve" para navegar los ríos y arroyos del Delta de
 18. **Buscador unificado (v8, 12/11/2026, en `test`):** una sola búsqueda junta **tus puntos guardados**, los **cauces** (de `cauces.json`, al instante) y los **lugares** (Overpass, llegan después: "buscando más…"). Antes, si el nombre coincidía con un cauce, solo mostraba cauces. Si coincide un punto guardado, el mapa va directo a su pin y abre su tarjeta. Con el buscador vacío aparecen primero los **Recientes** (historial) y después las sugerencias.
 19. **Arreglo del buscador (v9, 12/11/2026, en `test`):** se quedaba trabado en "Buscando…" esperando al servidor de lugares. Ahora, si ya hay resultados propios o de cauces, al servidor se le dan como mucho 8 s; y al limpiar o escribir de nuevo se corta la búsqueda anterior y aparecen enseguida los recientes y las sugerencias.
 20. **Quitar destino borra también la salida (v10, 12/11/2026, en `test`):** al tocar *Quitar destino* se borra el punto elegido con *Salir de acá* (y la ruta), así la próxima ruta vuelve a salir desde tu ubicación.
+21. **Lugares en el mapa (v11, 13/11/2026, en `test`):** archivo propio **`lugares.json`** (como `cauces.json`), generado con **`descargar-lugares.ps1`**: estaciones de servicio (incluido combustible náutico), restaurantes, bares y cafés, marinas y muelles, proveedurías, alojamiento y salud del Delta. Se ven como íconos desde zoom 13 (con nombre desde zoom 16); al tocar uno se abre su tarjeta con **Cómo llegar** y ☆ para guardarlo en tus puntos. Con el archivo cargado, el buscador (por nombre o por categoría, como "combustible") sale todo del celular: al instante, sin señal y sin consultar al servidor. Capa "Lugares" en Capas y estado en Ajustes > Lugares guardados. Sin el archivo, la app sigue buscando lugares en el servidor como antes.
 
-**Estado actual:** versión `v10` en `test` (copia de seguridad, pines con el dedo, Cómo llegar y buscador unificado y arreglado), `v4` en `main`. La carpeta local trabaja en la rama `test`.
+**Estado actual:** versión `v11` en `test` (copia de seguridad, pines con el dedo, Cómo llegar y buscador unificado y arreglado), `v4` en `main`. La carpeta local trabaja en la rama `test`.
 
 ## Funciones actuales
 
@@ -85,6 +86,8 @@ App web tipo "Google Maps / Wavve" para navegar los ríos y arroyos del Delta de
 | `js/ruta.js` | Ruta por agua (Dijkstra) y prioridad de cauces |
 | `js/datos.js` | Overpass con respaldo, `cauces.json` y resultados de búsqueda |
 | `cauces.json` | Cauces del Delta bajados de OpenStreetMap |
+| `lugares.json` | Lugares del Delta (combustible, restaurantes, marinas…) bajados de OpenStreetMap |
+| `descargar-lugares.ps1` | Script de PowerShell que baja los lugares del Delta y arma `lugares.json` |
 | `descargar-cauces.ps1` | Script de PowerShell que baja el Delta en 6 partes y arma `cauces.json` |
 | `sw.js` | Service worker: guarda la app, los cauces y los mosaicos vistos para usarla sin señal |
 | `manifest.webmanifest` | Nombre, colores e íconos para instalarla en la pantalla de inicio |
@@ -118,6 +121,7 @@ Este resumen (`mapa-delta-resumen.md`) también está en el repositorio, para re
 2. Subir los cambios con Git (`git add`, `git commit`, `git push`) o, si no hay Git a mano, con Add file > Upload files en la web (la carpeta `js` se arrastra entera).
 3. GitHub Pages tarda uno o dos minutos en publicar. En el iPhone: abrir la app con señal, cerrarla y volver a abrirla.
 4. Para refrescar los cauces: correr de nuevo `descargar-cauces.ps1`, subir el nuevo `cauces.json` y la `VERSION`.
+5. Para refrescar los lugares: correr `powershell -ExecutionPolicy Bypass -File .\descargar-lugares.ps1` dentro de la carpeta, subir el nuevo `lugares.json` y la `VERSION`.
 
 ## Cómo seguir en otra computadora
 
@@ -138,7 +142,7 @@ Este resumen (`mapa-delta-resumen.md`) también está en el repositorio, para re
 - Sin conexión solo están los mosaicos que ya se vieron con señal; no hay descarga de zonas enteras (el servidor de OpenStreetMap no lo permite).
 - Los mosaicos del servidor público de OpenStreetMap son para uso liviano.
 - Los resultados de lugares dependen de la calidad de los datos de OSM en la zona.
-- `cauces.json` es una foto del día en que se descargó; conviene actualizarlo de vez en cuando.
+- `cauces.json` y `lugares.json` son una foto del día en que se descargaron; conviene actualizarlos de vez en cuando. Si un recreo o proveeduría no está cargado en OpenStreetMap, no aparece: guardalo como punto propio.
 
 ## Próximos pasos posibles
 

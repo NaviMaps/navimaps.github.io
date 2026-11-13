@@ -4,21 +4,30 @@ import { PRE } from './entorno.js';
 
 // Categorías del buscador: palabras que las activan (re) y filtros de Overpass (f)
 export var CATS = [
-  { n: 'Restaurantes', e: '🍴', re: /restaur|comer|parrilla|pizzer/, f: ['["amenity"="restaurant"]'] },
-  { n: 'Combustible', e: '⛽', re: /combustible|nafta|estacion de servicio|ypf|shell|axion|surtidor/, f: ['["amenity"="fuel"]'] },
-  { n: 'Marinas y muelles', e: '⚓', re: /marina|muelle|guarderia|nautic|astillero/, f: ['["leisure"="marina"]', '["man_made"="pier"]', '["waterway"="boatyard"]'] },
-  { n: 'Bares y cafés', e: '☕', re: /\bbar\b|bares|cafe|cerveza|\bpub\b/, f: ['["amenity"~"^(bar|pub|cafe)$"]'] },
-  { n: 'Proveedurías', e: '🛒', re: /proveedur|supermercado|almacen|kiosco|mercado/, f: ['["shop"~"^(supermarket|convenience|general)$"]'] },
-  { n: 'Alojamiento', e: '🏨', re: /hotel|aloja|cabana|hostel|camping|posada/, f: ['["tourism"~"^(hotel|guest_house|chalet|hostel|camp_site)$"]'] },
-  { n: 'Salud', e: '➕', re: /farmacia|hospital|clinica|salud/, f: ['["amenity"~"^(pharmacy|hospital|clinic)$"]'] }
+  { c: 'rest', n: 'Restaurantes', e: '🍴', re: /restaur|comer|parrilla|pizzer/, f: ['["amenity"="restaurant"]'] },
+  { c: 'fuel', n: 'Combustible', e: '⛽', re: /combustible|nafta|estacion de servicio|ypf|shell|axion|surtidor/, f: ['["amenity"="fuel"]'] },
+  { c: 'marina', n: 'Marinas y muelles', e: '⚓', re: /marina|muelle|guarderia|nautic|astillero/, f: ['["leisure"="marina"]', '["man_made"="pier"]', '["waterway"="boatyard"]'] },
+  { c: 'bar', n: 'Bares y cafés', e: '☕', re: /\bbar\b|bares|cafe|cerveza|\bpub\b/, f: ['["amenity"~"^(bar|pub|cafe)$"]'] },
+  { c: 'shop', n: 'Proveedurías', e: '🛒', re: /proveedur|supermercado|almacen|kiosco|mercado/, f: ['["shop"~"^(supermarket|convenience|general)$"]'] },
+  { c: 'lodge', n: 'Alojamiento', e: '🏨', re: /hotel|aloja|cabana|hostel|camping|posada/, f: ['["tourism"~"^(hotel|guest_house|chalet|hostel|camp_site)$"]'] },
+  { c: 'health', n: 'Salud', e: '➕', re: /farmacia|hospital|clinica|salud/, f: ['["amenity"~"^(pharmacy|hospital|clinic)$"]'] }
 ];
 
 var KIND = {
   restaurant: 'Restaurante', fuel: 'Estación de servicio', cafe: 'Café', bar: 'Bar', pub: 'Bar',
   marina: 'Marina', pier: 'Muelle', boatyard: 'Guardería / astillero', supermarket: 'Supermercado',
   convenience: 'Proveeduría', general: 'Almacén', hotel: 'Hotel', guest_house: 'Alojamiento',
-  chalet: 'Cabaña', hostel: 'Hostel', camp_site: 'Camping', pharmacy: 'Farmacia', hospital: 'Hospital', clinic: 'Clínica'
+  chalet: 'Cabaña', hostel: 'Hostel', camp_site: 'Camping', pharmacy: 'Farmacia', hospital: 'Hospital', clinic: 'Clínica',
+  fast_food: 'Comida rápida', ice_cream: 'Heladería', motel: 'Motel'
 };
+// Tipo de OSM → categoría del buscador (para el ícono y para buscar "combustible", "restaurantes"…)
+var CAT_DE = {
+  restaurant: 'rest', fast_food: 'rest', ice_cream: 'rest', fuel: 'fuel', cafe: 'bar', bar: 'bar', pub: 'bar',
+  marina: 'marina', pier: 'marina', boatyard: 'marina', supermarket: 'shop', convenience: 'shop', general: 'shop',
+  hotel: 'lodge', guest_house: 'lodge', chalet: 'lodge', hostel: 'lodge', camp_site: 'lodge', motel: 'lodge',
+  pharmacy: 'health', hospital: 'health', clinic: 'health'
+};
+export function emojiDe(c) { for (var i = 0; i < CATS.length; i++) if (CATS[i].c === c) return CATS[i].e; return '📍'; }
 var WTR = { river: 'río', stream: 'arroyo', canal: 'canal', tidal_channel: 'canal de marea' };
 
 function kindOf(t) {
@@ -141,6 +150,29 @@ export function waterEls(s, w, n, e, onTry) {
     [s, w, n, e].map(function (x) { return x.toFixed(2); }).join(',') + ');out geom;';
   return ovp(q, onTry).then(function (j) { return j.elements || []; });
 }
+
+// ---------- Lugares locales (lugares.json, generado con descargar-lugares.ps1) ----------
+
+var LUG = null, LUG_FECHA = '';
+export function lugares() { return LUG; }
+export function lugaresFecha() { return LUG_FECHA; }
+
+// Carga lugares.json y avisa con el evento 'delta-lugares'. Si el archivo no está, la app sigue usando el servidor.
+function loadLugares() {
+  fetch('lugares.json')
+    .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+    .then(function (j) {
+      if (!j || !Array.isArray(j.lugares)) return;
+      LUG_FECHA = j.fecha || '';
+      LUG = j.lugares.filter(function (x) { return typeof x.la === 'number' && typeof x.lo === 'number'; }).map(function (x) {
+        var c = CAT_DE[x.k] || 'shop', kind = x.b ? 'Combustible náutico' : (KIND[x.k] || 'Lugar');
+        return { name: x.n || kind, named: !!x.n, kind: kind, c: c, e: emojiDe(c), lat: x.la, lng: x.lo, lines: null, poi: true };
+      });
+      window.dispatchEvent(new Event('delta-lugares'));
+    })
+    .catch(function () {});
+}
+loadLugares();
 
 // ---------- Resultados de búsqueda ----------
 
