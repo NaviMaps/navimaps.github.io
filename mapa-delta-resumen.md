@@ -35,7 +35,9 @@ App web tipo "Google Maps / Wavve" para navegar los ríos y arroyos del Delta de
 
 26. **Zonas deportivas corregidas (v15, 13/11/2026, en `test`):** en el croquis de la primera sección el esquí y wake está en un rojo más oscuro y se había tomado como motonáutica; ahora son esquí y wake (desembocadura del Palmas, Canal del Este, Río San Antonio y un tramo cerca del Palmas). Además se corrigió la ubicación del lado este de esa sección (estaba corrida unos 4 km): había trazos cruzando el río abierto.
 
-**Estado actual:** versión `v15` en `test` (alturas del río y zonas deportivas), `v12` en `main`. La carpeta local trabaja en la rama `test`.
+27. **Zonas deportivas revisadas una por una (v16, 13/11/2026, en `test`):** se revisaron todas las líneas contra el croquis y los ríos reales. Paraná Guazú y Pasaje Talavera ahora van pegadas al río (ubicadas por los kilómetros del croquis: Talavera km 218 a 190, vela en el Guazú km 205 a 181,5, jet ski km 218 a 215). En la primera sección aparecieron el flyboard (sobre el Palmas hasta la boca del Capitán) y más tramos de fondeo; 11 de 25 quedaron pegadas a su río. Quedan 19 aproximadas (punteadas): 14 de la primera sección, que siguen arroyitos que no están cargados en OpenStreetMap o están en un croquis deformado, y 5 áreas en agua abierta del Canal Costanero.
+
+**Estado actual:** versión `v16` en `test` (alturas del río y zonas deportivas), `v12` en `main`. La carpeta local trabaja en la rama `test`.
 
 ## Funciones actuales
 
@@ -100,7 +102,7 @@ App web tipo "Google Maps / Wavve" para navegar los ríos y arroyos del Delta de
 | `descargar-cauces.ps1` | Script de PowerShell que baja el Delta en 6 partes y arma `cauces.json` |
 | `js/alturas.js` | Lee `alturas.json`; tendencia, estado, estación más cercana y gráfico |
 | `scripts/alturas.py` | Baja las alturas del INA y las mareas del SHN y arma `alturas.json` (lo corre GitHub cada 30 min) |
-| `zonas.json` | Zonas de práctica deportiva de la Prefectura (34 zonas, pasadas de los croquis) |
+| `zonas.json` | Zonas de práctica deportiva de la Prefectura (39 zonas, pasadas de los croquis) |
 | `js/zonas.js` | Lee `zonas.json`, colores por deporte y qué zona se tocó |
 | `sw.js` | Service worker: guarda la app, los cauces y los mosaicos vistos para usarla sin señal |
 | `manifest.webmanifest` | Nombre, colores e íconos para instalarla en la pantalla de inicio |
@@ -250,14 +252,14 @@ Hecho el 13/11/2026 (v14).
 
 **Fuente:** la Prefectura Naval publica las zonas habilitadas como **imágenes** (croquis sobre la carta náutica), no como datos de mapa: https://www.argentina.gob.ar/prefecturanaval/deportesnauticos/referencia-mapa-practica-deportiva. Colores: amarillo remo y SUP, rojo esquí y wakeboard, verde vela, azul windsurf y kite, marrón motonáutica, negro moto de agua o jet ski, gris fondeo, naranja flyboard.
 
-**Áreas pasadas (34 zonas en `zonas.json`, 15 aproximadas):**
+**Áreas pasadas (39 zonas en `zonas.json`, 19 aproximadas):**
 - **Primera sección de islas** (frente a Tigre y San Fernando): remo en muchos arroyos, fondeo, vela en el Paraná de las Palmas y esquí y wake en la desembocadura del Palmas, el Canal del Este, el Río San Antonio y un tramo cerca del Palmas (en ese croquis el rojo del esquí es más oscuro).
 - **Segunda sección:** esquí y wake en todo el Río Barca Grande y en el tramo medio del Paraná Miní; jet ski en el Arroyo La Barquita y el Canal Nº 4; motonáutica en el Paraná Miní hasta la desembocadura.
 - **Canal Costanero:** jet ski frente a San Isidro, windsurf y kite frente a San Isidro y Olivos, vela en el río abierto y remo pegado a la costa.
 - **Escobar:** esquí y wake en el Paraná de las Palmas, km 77,5 a 81 (margen derecha).
-- **Paraná Guazú y Pasaje Talavera:** esquí y wake en el Talavera, vela en el Guazú y jet ski cerca de Cinco Bocas.
+- **Paraná Guazú y Pasaje Talavera:** esquí y wake en el Talavera (km 218 a 190), vela en el Guazú (km 205 a 181,5) y jet ski en el Guazú desde Cinco Bocas (km 218 a 215). Ubicadas por los kilómetros del croquis sobre el río real.
 - Faltan los croquis de Campana, Zárate, Ibicuy, Baradero, San Pedro y Paso Los Ratones (se pueden sumar igual).
 
-**Cómo se pasaron:** cada croquis se ubicó sobre el mapa con puntos conocidos (cruces de ríos de `cauces.json`, clubes náuticos y pueblos buscados en OpenStreetMap). Después se separó cada color, y las líneas se pegaron al trazado real del río cuando se pudo reconocer cuál era. Las que no siguen un río mapeado o están en agua abierta quedaron **aproximadas** (se dibujan punteadas en la app; error de unos cientos de metros). En `zonas.json`: `d` deporte, `t` tipo (`l` línea, `a` área), `s` sección, `ap` aproximada, `p` puntos `[lat, lng]`.
+**Cómo se pasaron:** cada croquis se ubicó sobre el mapa con puntos conocidos (cruces de ríos de `cauces.json`, clubes náuticos y pueblos buscados en OpenStreetMap). Después se separó cada color, y las líneas se pegaron al trazado real del río cuando se pudo reconocer cuál era. Las que no siguen un río mapeado o están en agua abierta quedaron **aproximadas** (se dibujan punteadas en la app; error de unos cientos de metros). Por qué quedan aproximadas: el croquis es un escaneo de una carta dibujada (no es un mapa exacto y está deformado distinto en cada parte), muchas líneas de remo y fondeo siguen arroyitos que la carta dibuja con línea punteada y que no están cargados en OpenStreetMap, y las áreas del Canal Costanero están en agua abierta (no hay río al que pegarlas). Para mejorarlas: decirle a Claude qué arroyo es cada una (o cargar el arroyo en OpenStreetMap). En `zonas.json`: `d` deporte, `t` tipo (`l` línea, `a` área), `s` sección, `ap` aproximada, `p` puntos `[lat, lng]`.
 
 **En la app:** desde zoom 11 se ven las líneas y áreas con el color de cada deporte. Al tocar una, la tarjeta dice el deporte, la sección, el largo y si es aproximada, con un botón al croquis original. Capa "Zonas deportivas" en ☰ › Capas, con las referencias de colores. **Es una referencia: vale lo que dice la disposición vigente de la Prefectura.**
