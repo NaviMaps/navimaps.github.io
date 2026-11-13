@@ -63,7 +63,9 @@ App web tipo "Google Maps / Wavve" para navegar los ríos y arroyos del Delta de
 
 40. **Tutorial a `main` (13/11/2026):** el tutorial con capturas y animaciones queda publicado en https://navimaps.github.io/.
 
-**Estado actual:** versión `v28` en `main` y en `test`. La carpeta local trabaja en la rama `test`.
+41. **Animación de "Cómo llegar" (v29, 13/11/2026, en `test`):** el paso del tutorial muestra el recorrido completo con capturas reales y un dedo animado: mantener apretado el mapa → tocar «Ir ahí» → la ruta por los ríos (de un punto en el Río Sarmiento al Arroyo Abra Vieja, 3,7 mn) → el panel con la distancia, la llegada y «Ruta por agua». Imágenes `img/tuto/llegar1` a `llegar4.webp`.
+
+**Estado actual:** versión `v29` en `test` (animación de Cómo llegar), `v28` en `main`. La carpeta local trabaja en la rama `test`.
 
 ## Funciones actuales
 

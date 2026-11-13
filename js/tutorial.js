@@ -20,8 +20,8 @@ var PASOS = [
     d: 'Mantené apretado el mapa medio segundo donde quieras: aparece un pin y le ponés nombre (muelle, recreo, lugar de pesca…).',
     x: 'Tus puntos se guardan en el celular y los ves en ☰ › Puntos.', anim: 'marcar' },
   { e: '🧭', t: 'Cómo llegar',
-    d: 'Tocá un punto guardado, un lugar o un pin y elegí «Cómo llegar»: calcula la ruta por agua siguiendo los ríos y arroyos, con la distancia en millas y el tiempo según tu velocidad.',
-    x: 'Podés cambiar la velocidad de crucero en la ruta o en Ajustes.', img: 'ruta', pos: '50% 8%' },
+    d: 'Mantené apretado el mapa donde querés ir y tocá «Ir ahí» (o tocá un punto guardado o un lugar y elegí «Cómo llegar»). Calcula la ruta por agua siguiendo los ríos y arroyos, con la distancia en millas y la hora de llegada.',
+    x: 'Si cambiás la salida o la velocidad, tocá «Ruta por agua» para recalcularla.', anim: 'llegar' },
   { e: '🔍', t: 'Buscar',
     d: 'Buscá tus puntos, ríos y arroyos por nombre, o lugares como combustible, restaurantes, marinas y proveedurías.',
     sel: '.sb', img: 'buscar', pos: 'top' },
@@ -57,6 +57,12 @@ function Medio(props) {
       <svg className="an-pin" viewBox="0 0 24 32" width="26" height="34"><path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 20 12 20s12-11 12-20C24 5.4 18.6 0 12 0z" fill="#e5484d" stroke="#fff" stroke-width="2"/><circle cx="12" cy="12" r="4.5" fill="#fff"/></svg>
       <div className="an-card"><b>Nuevo punto</b><span className="an-input">Muelle de Pepe</span><span className="an-btn">Guardar</span></div>
       <span className="an-cap">Mantené apretado medio segundo</span></div>`;
+  if (p.anim === 'llegar') return html`<div className="tuto-media an an-llegar">
+      <img className="cl cl1" src=${IMG + 'llegar1.webp'} alt="" /><img className="cl cl2" src=${IMG + 'llegar2.webp'} alt="" />
+      <img className="cl cl3" src=${IMG + 'llegar3.webp'} alt="" /><img className="cl cl4" src=${IMG + 'llegar4.webp'} alt="" />
+      <i className="an-ring"></i><i className="f"></i>
+      <span className="an-cap c1">1 · Mantené apretado donde querés ir</span><span className="an-cap c2">2 · Tocá «Ir ahí»</span>
+      <span className="an-cap c3">3 · Calcula la ruta por los ríos</span><span className="an-cap c4">4 · Distancia, llegada y «Ruta por agua»</span></div>`;
   if (p.anim === 'grabar') return html`<div className="tuto-media an an-grabar">
       <div className="an-map" style=${fondo}></div>
       <svg className="an-traza" viewBox="0 0 360 180" preserveAspectRatio="none"><path d="M40 150 C 90 140, 110 100, 150 95 S 230 70, 250 55 S 300 30, 330 28" fill="none" stroke="#0a7c8c" stroke-width="5" stroke-linecap="round" pathLength="100"/></svg>

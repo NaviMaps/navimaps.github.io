@@ -106,6 +106,26 @@ input{flex:1;min-width:0;min-height:46px;padding:0 12px;border-radius:14px;borde
 @keyframes m-pin{0%,40%{opacity:0;transform:translateY(-40px)}48%{opacity:1;transform:translateY(0)}92%{opacity:1}100%{opacity:0}}
 @keyframes m-card{0%,52%{transform:translateY(130%)}62%,90%{transform:translateY(0)}100%{transform:translateY(130%)}}
 @keyframes m-cap{0%,45%{opacity:1}52%,100%{opacity:0}}
+/* cómo llegar: mantener apretado → Ir ahí → ruta → panel (14 s), con capturas reales */
+.an-llegar{height:250px}
+.an-llegar .cl{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0}
+.an-llegar .cl1{animation:l-1 14s linear infinite}.an-llegar .cl2{animation:l-2 14s linear infinite}
+.an-llegar .cl3{animation:l-3 14s ease infinite}.an-llegar .cl4{animation:l-4 14s linear infinite}
+.an-llegar .an-cap{top:8px;bottom:auto;opacity:0}
+.an-llegar .c1{top:auto;bottom:8px;animation:l-c1 14s linear infinite}.an-llegar .c2{animation:l-c2 14s linear infinite}
+.an-llegar .c3{animation:l-c3 14s linear infinite}.an-llegar .c4{animation:l-c4 14s linear infinite}
+.an-llegar .f{animation:l-f 14s ease infinite}
+.an-llegar .an-ring{position:absolute;width:50px;height:50px;margin:-25px 0 0 -25px;left:56.4%;top:14.7%;border-radius:50%;border:3px solid var(--accent);opacity:0;animation:l-ring 14s ease infinite}
+@keyframes l-1{0%,17%{opacity:1}19%,100%{opacity:0}}
+@keyframes l-2{0%,17%{opacity:0}19%,38%{opacity:1}40%,100%{opacity:0}}
+@keyframes l-3{0%,38%{opacity:0;transform:scale(1.08)}41%{opacity:1}64%{opacity:1;transform:scale(1)}66%,100%{opacity:0}}
+@keyframes l-4{0%,64%{opacity:0}66%,98%{opacity:1}100%{opacity:0}}
+@keyframes l-c1{0%,17%{opacity:1}18%,100%{opacity:0}}@keyframes l-c2{0%,18%{opacity:0}19%,38%{opacity:1}39%,100%{opacity:0}}
+@keyframes l-c3{0%,39%{opacity:0}41%,64%{opacity:1}65%,100%{opacity:0}}@keyframes l-c4{0%,65%{opacity:0}67%,98%{opacity:1}99%,100%{opacity:0}}
+@keyframes l-ring{0%,4%{opacity:0;transform:scale(.4)}14%{opacity:1;transform:scale(1)}17%,100%{opacity:0;transform:scale(1.3)}}
+@keyframes l-f{0%{left:56.4%;top:14.7%;opacity:0;transform:scale(1)}3%{opacity:1}5%,15%{transform:scale(.8)}17%{opacity:1;transform:scale(1)}19%{left:56.4%;top:14.7%;opacity:0}
+  22%{left:72%;top:89%;opacity:0}25%{opacity:1;transform:scale(1)}31%{left:72%;top:89%;transform:scale(.75)}34%{transform:scale(1);opacity:1}37%,66%{left:72%;top:89%;opacity:0}
+  68%{left:50%;top:55%;opacity:0}74%{opacity:1;transform:scale(1)}82%{left:50%;top:55%;transform:scale(.75)}86%{transform:scale(1);opacity:1}92%,100%{left:50%;top:55%;opacity:0}}
 /* grabar recorrido (6 s) */
 .an-grabar .an-traza{position:absolute;inset:0;width:100%;height:100%}
 .an-grabar .an-traza path{stroke-dasharray:100;stroke-dashoffset:100;animation:r-traza 6s linear infinite}
