@@ -61,7 +61,9 @@ App web tipo "Google Maps / Wavve" para navegar los ríos y arroyos del Delta de
 
 39. **Tutorial con imágenes y animaciones (v28, 13/11/2026, en `test`):** cada paso del tutorial muestra una captura real de la app (inicio, Cómo llegar con la ruta, buscador, panel del río, menú de Capas) o una animación sobre un pedazo de mapa real (gestos: arrastrar, pellizcar y doble toque; marcar un punto; grabar el recorrido; cambio mapa ↔ satélite). Las imágenes están en `img/tuto/` (WebP, 220 KB en total); las animaciones son CSS en `index.html` (sección "Tutorial") y respetan la opción de reducir movimiento del iPhone.
 
-**Estado actual:** versión `v28` en `test` (tutorial con imágenes), `v26` en `main`. La carpeta local trabaja en la rama `test`.
+40. **Tutorial a `main` (13/11/2026):** el tutorial con capturas y animaciones queda publicado en https://navimaps.github.io/.
+
+**Estado actual:** versión `v28` en `main` y en `test`. La carpeta local trabaja en la rama `test`.
 
 ## Funciones actuales
 
